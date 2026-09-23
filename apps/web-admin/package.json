@@ -1,0 +1,9 @@
+{
+  "name": "@muzammil-pos/web-admin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "RESERVED for future — responsive/mobile web admin access. Not part of v1 scope.",
+  "scripts": {
+    "dev": "echo \"Not implemented in v1\" && exit 0"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "@muzammil-pos/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Backend modules (auth, inventory, sales, suppliers, salesmen, expenses, reports, settings) — embedded/local service layer for the desktop app",
+  "main": "src/main.js",
+  "scripts": {
+    "dev": "echo \"TODO (Day 3): wire up backend dev server\" && exit 0",
+    "build": "echo \"TODO: wire up production build\" && exit 0",
+    "db:migrate": "echo \"TODO (Day 2): npx prisma migrate dev\" && exit 0",
+    "db:seed": "echo \"TODO (Day 2): seed default admin/categories/settings\" && exit 0"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

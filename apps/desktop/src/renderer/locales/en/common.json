@@ -1,0 +1,22 @@
+{
+  "app": {
+    "shopName": "Muzammil Store"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "inventory": "Inventory",
+    "sales": "Sales",
+    "suppliers": "Suppliers",
+    "salesmen": "Salesmen",
+    "expenses": "Expenses",
+    "reports": "Reports",
+    "users": "Users",
+    "settings": "Settings"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "username": "Username",
+    "password": "Password",
+    "invalidCredentials": "Incorrect username or password."
+  }
+}

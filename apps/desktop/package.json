@@ -1,0 +1,13 @@
+{
+  "name": "@muzammil-pos/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Electron + React desktop app — Admin dashboard & Cashier POS for Muzammil Store",
+  "main": "src/main/index.js",
+  "scripts": {
+    "dev": "echo \"TODO (Day 4): wire up Vite + Electron dev script\" && exit 0",
+    "build": "echo \"TODO: wire up production build\" && exit 0"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

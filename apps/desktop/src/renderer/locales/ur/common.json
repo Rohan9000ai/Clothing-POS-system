@@ -1,0 +1,22 @@
+{
+  "app": {
+    "shopName": "مزمل اسٹور"
+  },
+  "nav": {
+    "dashboard": "ڈیش بورڈ",
+    "inventory": "اسٹاک",
+    "sales": "سیلز",
+    "suppliers": "سپلائرز",
+    "salesmen": "سیلز مین",
+    "expenses": "اخراجات",
+    "reports": "رپورٹس",
+    "users": "صارفین",
+    "settings": "ترتیبات"
+  },
+  "auth": {
+    "signIn": "لاگ ان کریں",
+    "username": "یوزرنیم",
+    "password": "پاس ورڈ",
+    "invalidCredentials": "یوزرنیم یا پاس ورڈ غلط ہے۔"
+  }
+}
