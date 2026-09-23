@@ -2,14 +2,30 @@
   "name": "@muzammil-pos/api",
   "version": "0.1.0",
   "private": true,
+  "type": "commonjs",
   "description": "Backend modules (auth, inventory, sales, suppliers, salesmen, expenses, reports, settings) — embedded/local service layer for the desktop app",
   "main": "src/main.js",
   "scripts": {
     "dev": "echo \"TODO (Day 3): wire up backend dev server\" && exit 0",
     "build": "echo \"TODO: wire up production build\" && exit 0",
-    "db:migrate": "echo \"TODO (Day 2): npx prisma migrate dev\" && exit 0",
-    "db:seed": "echo \"TODO (Day 2): seed default admin/categories/settings\" && exit 0"
+    "db:generate": "prisma generate --schema=prisma/schema.prisma",
+    "db:migrate": "prisma migrate dev --schema=prisma/schema.prisma",
+    "db:migrate:deploy": "prisma migrate deploy --schema=prisma/schema.prisma",
+    "db:seed": "ts-node prisma/seed.ts",
+    "db:studio": "prisma studio --schema=prisma/schema.prisma"
   },
-  "dependencies": {},
-  "devDependencies": {}
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "argon2": "^0.41.1",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.0",
+    "@types/node": "^22.0.0"
+  }
 }

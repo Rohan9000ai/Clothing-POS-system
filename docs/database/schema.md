@@ -92,3 +92,22 @@ id · user_id (FK) · action · entity · entity_id · old_data · new_data · c
 - barcode label generation
 
 ...without redesigning any existing table.
+
+
+---
+
+## Day 2 addendum — implementation decisions
+
+- **Money storage:** all money fields are `Int` storing **paisa** (smallest currency unit),
+  e.g. Rs. 1,250.50 → `125050`. Chosen over floating point to eliminate rounding errors
+  in totals, discounts, and supplier balances. UI layer divides/multiplies by 100.
+- **Primary keys:** `cuid()` strings (via Prisma `@default(cuid())`) instead of auto-increment
+  integers — safer for offline-generated records and avoids collisions if data is ever merged
+  across terminals in a future multi-terminal version.
+- **Indexes added** (per performance requirements): `products.name`, `product_variants.productId`,
+  `sales.saleDate`, `sale_items.saleId`, `expenses.expenseDate`, `supplier_transactions.supplierId`.
+  Unique indexes already exist on `users.username`, `products.productCode`,
+  `product_variants.variantSku`, `sales.billNo`, and the `(productId, size, color)` composite
+  on `product_variants`.
+- **WAL mode + foreign key enforcement** applied via pragmas in `apps/api/src/database/prisma.ts`
+  on every connection, not just once — SQLite requires this per-connection.

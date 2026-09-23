@@ -20,12 +20,14 @@ Legend: `[ ]` to do · `[~]` in progress · `[x]` done
 - [x] Placeholder `package.json` in each app/package so the workspace resolves
 - [x] Initial commit
 
-## Day 2 — Database schema & Prisma setup (planned)
-- [ ] Write full Prisma schema for all 16 tables (from `docs/database/schema.md`)
-- [ ] Decide money storage format (integer minor units vs decimal) and document it
-- [ ] First migration
-- [ ] Seed script: default admin user, default categories, default settings row
-- [ ] Enable SQLite WAL mode + foreign key enforcement
+## Day 2 — Database schema & Prisma setup
+- [x] Write full Prisma schema for all 16 tables (from `docs/database/schema.md`)
+- [x] Decide money storage format — Int storing paisa (smallest currency unit)
+- [x] First migration (`20260923075010_init`) created and applied
+- [x] Seed script: default admin user, default categories, default settings row — verified working, idempotent on re-run
+- [x] Enable SQLite WAL mode + foreign key enforcement (via `apps/api/src/database/prisma.ts` pragmas)
+- [x] Note: SQLite doesn't support native Prisma `enum` — all enum-like fields are `String` columns,
+with allowed values defined in `packages/types/enums.ts` for TypeScript-side safety
 
 ## Day 3 — Backend core (planned)
 - [ ] `apps/api` module scaffolding for auth, users, inventory, sales, suppliers, salesmen, expenses, settings

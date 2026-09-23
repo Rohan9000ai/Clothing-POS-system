@@ -1,0 +1,300 @@
+// Muzammil Store POS — Prisma schema
+// Engine: SQLite (WAL mode enabled in prisma.ts client setup)
+// Money fields are stored as Int in paisa (smallest currency unit).
+//
+// NOTE: SQLite has no native enum type, so Prisma `enum` blocks are NOT used here.
+// All "enum-like" fields are String columns. The allowed values are enforced in
+// TypeScript via union types + Zod schemas (see packages/validation and
+// packages/types/enums.ts) instead of at the database schema level.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ==============================
+// Models
+// ==============================
+
+model User {
+  id           String   @id @default(cuid())
+  fullName     String   @map("full_name")
+  username     String   @unique
+  passwordHash String   @map("password_hash")
+  role         String   // "ADMIN" | "CASHIER"
+  status       String   @default("ACTIVE") // "ACTIVE" | "INACTIVE"
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  salesman            Salesman?
+  cashierSales         Sale[]                @relation("SaleCashier")
+  supplierTxnsCreated  SupplierTransaction[]  @relation("SupplierTxnCreatedBy")
+  expensesCreated      Expense[]              @relation("ExpenseCreatedBy")
+  inventoryMovements   InventoryMovement[]    @relation("InventoryMovementCreatedBy")
+  auditLogs            AuditLog[]
+
+  @@map("users")
+}
+
+model Salesman {
+  id        String   @id @default(cuid())
+  userId    String?  @unique @map("user_id")
+  name      String
+  phone     String
+  cnic      String
+  joinDate  DateTime @map("join_date")
+  salary    Int      // paisa
+  status    String   @default("ACTIVE") // "ACTIVE" | "INACTIVE"
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user     User?     @relation(fields: [userId], references: [id])
+  sales    Sale[]
+  expenses Expense[]
+
+  @@map("salesmen")
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  status    String   @default("ACTIVE") // "ACTIVE" | "INACTIVE"
+  createdAt DateTime @default(now()) @map("created_at")
+
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id              String   @id @default(cuid())
+  productCode     String   @unique @map("product_code") // auto-generated internal code, NOT a barcode
+  name            String
+  categoryId      String   @map("category_id")
+  basePrice       Int      @map("base_price") // paisa
+  costPrice       Int?     @map("cost_price") // paisa
+  status          String   @default("ACTIVE") @map("status") // "ACTIVE" | "INACTIVE"
+  primaryImageUrl String?  @map("primary_image_url")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  category  Category         @relation(fields: [categoryId], references: [id])
+  variants  ProductVariant[]
+  images    ProductImage[]
+  saleItems SaleItem[]
+
+  @@index([name])
+  @@map("products")
+}
+
+model ProductVariant {
+  id            String   @id @default(cuid())
+  productId     String   @map("product_id")
+  size          String
+  color         String
+  variantSku    String   @unique @map("variant_sku")
+  quantity      Int      @default(0)
+  priceOverride Int?     @map("price_override") // paisa
+  status        String   @default("ACTIVE") // "ACTIVE" | "INACTIVE"
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  product            Product              @relation(fields: [productId], references: [id])
+  saleItems          SaleItem[]
+  inventoryMovements InventoryMovement[]
+
+  @@unique([productId, size, color])
+  @@index([productId])
+  @@map("product_variants")
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String  @map("product_id")
+  imageUrl  String  @map("image_url")
+  isPrimary Boolean @default(false) @map("is_primary")
+  sortOrder Int     @default(0) @map("sort_order")
+
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("product_images")
+}
+
+model Customer {
+  id             String   @id @default(cuid())
+  name           String   @default("Walk-in")
+  phone          String?
+  address        String?
+  openingBalance Int      @default(0) @map("opening_balance") // paisa
+  status         String   @default("ACTIVE") // "ACTIVE" | "INACTIVE"
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  sales Sale[]
+
+  @@map("customers")
+}
+
+model Supplier {
+  id             String   @id @default(cuid())
+  name           String
+  phone          String
+  address        String
+  openingBalance Int      @default(0) @map("opening_balance") // paisa
+  status         String   @default("ACTIVE") // "ACTIVE" | "INACTIVE"
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  transactions SupplierTransaction[]
+  expenses     Expense[]
+
+  @@map("suppliers")
+}
+
+model SupplierTransaction {
+  id            String   @id @default(cuid())
+  supplierId    String   @map("supplier_id")
+  type          String   // "PURCHASE" | "PAYMENT" | "ADJUSTMENT"
+  amount        Int      // paisa
+  paymentMethod String   @map("payment_method") // "CASH" | "ONLINE_TRANSFER"
+  referenceNo   String?  @map("reference_no")
+  notes         String?
+  date          DateTime
+  createdById   String   @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  supplier  Supplier @relation(fields: [supplierId], references: [id])
+  createdBy User     @relation("SupplierTxnCreatedBy", fields: [createdById], references: [id])
+
+  @@index([supplierId])
+  @@map("supplier_transactions")
+}
+
+model Sale {
+  id            String   @id @default(cuid())
+  billNo        String   @unique @map("bill_no")
+  saleDate      DateTime @map("sale_date")
+  cashierId     String   @map("cashier_id")
+  salesmanId    String?  @map("salesman_id")
+  customerId    String   @map("customer_id")
+  subTotal      Int      @map("sub_total") // paisa
+  discountTotal Int      @default(0) @map("discount_total") // paisa
+  netTotal      Int      @map("net_total") // paisa
+  paymentStatus String   @map("payment_status") // "PAID" | "PARTIAL" | "UNPAID"
+  saleStatus    String   @default("COMPLETED") @map("sale_status") // "COMPLETED" | "VOID"
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  cashier  User          @relation("SaleCashier", fields: [cashierId], references: [id])
+  salesman Salesman?     @relation(fields: [salesmanId], references: [id])
+  customer Customer      @relation(fields: [customerId], references: [id])
+  items    SaleItem[]
+  payments SalePayment[]
+
+  @@index([saleDate])
+  @@map("sales")
+}
+
+model SaleItem {
+  id                  String @id @default(cuid())
+  saleId              String @map("sale_id")
+  productId           String @map("product_id")
+  variantId           String @map("variant_id")
+  productNameSnapshot String @map("product_name_snapshot")
+  sizeSnapshot        String @map("size_snapshot")
+  colorSnapshot       String @map("color_snapshot")
+  unitPrice           Int    @map("unit_price") // paisa
+  quantity            Int
+  lineDiscount        Int    @default(0) @map("line_discount") // paisa
+  lineTotal           Int    @map("line_total") // paisa
+
+  sale    Sale           @relation(fields: [saleId], references: [id])
+  product Product        @relation(fields: [productId], references: [id])
+  variant ProductVariant @relation(fields: [variantId], references: [id])
+
+  @@index([saleId])
+  @@map("sale_items")
+}
+
+model SalePayment {
+  id          String   @id @default(cuid())
+  saleId      String   @map("sale_id")
+  method      String   // "CASH" | "EASYPAISA" | "JAZZCASH" | "BANK_TRANSFER"
+  amount      Int      // paisa
+  referenceNo String?  @map("reference_no") // required if method != CASH (enforced in Zod)
+  paidAt      DateTime @default(now()) @map("paid_at")
+
+  sale Sale @relation(fields: [saleId], references: [id])
+
+  @@map("sale_payments")
+}
+
+model Expense {
+  id            String   @id @default(cuid())
+  expenseDate   DateTime @map("expense_date")
+  title         String
+  type          String   // "ELECTRICITY" | "SALARIES" | "PAYOUTS" | "SUPPLIER_PAYMENT" | "TAXES" | "OTHER"
+  amount        Int      // paisa
+  paymentMethod String   @map("payment_method") // "CASH" | "ONLINE_TRANSFER"
+  referenceNo   String?  @map("reference_no")
+  supplierId    String?  @map("supplier_id")
+  salesmanId    String?  @map("salesman_id")
+  notes         String?
+  createdById   String   @map("created_by")
+  status        String   @default("ACTIVE") // "ACTIVE" | "VOID"
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  supplier  Supplier? @relation(fields: [supplierId], references: [id])
+  salesman  Salesman? @relation(fields: [salesmanId], references: [id])
+  createdBy User      @relation("ExpenseCreatedBy", fields: [createdById], references: [id])
+
+  @@index([expenseDate])
+  @@map("expenses")
+}
+
+model Settings {
+  id                String   @id @default(cuid())
+  shopName          String   @map("shop_name")
+  currency          String   @default("PKR")
+  receiptHeader     String?  @map("receipt_header")
+  receiptFooter     String?  @map("receipt_footer")
+  taxPercent        Float    @default(0) @map("tax_percent")
+  lowStockThreshold Int      @default(5) @map("low_stock_threshold")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}
+
+model InventoryMovement {
+  id             String   @id @default(cuid())
+  variantId      String   @map("variant_id")
+  movementType   String   @map("movement_type") // "SALE" | "PURCHASE" | "ADJUSTMENT" | "RETURN" | "VOID"
+  quantityChange Int      @map("quantity_change") // positive or negative
+  referenceType  String   @map("reference_type") // e.g. "SALE", "SUPPLIER_PURCHASE"
+  referenceId    String   @map("reference_id")   // id of the sale/purchase/etc.
+  createdById    String   @map("created_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+  createdBy User           @relation("InventoryMovementCreatedBy", fields: [createdById], references: [id])
+
+  @@map("inventory_movements")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  action    String
+  entity    String
+  entityId  String   @map("entity_id")
+  oldData   String?  @map("old_data") // JSON string
+  newData   String?  @map("new_data") // JSON string
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
