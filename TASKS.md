@@ -35,12 +35,15 @@ with allowed values defined in `packages/types/enums.ts` for TypeScript-side saf
 - [ ] Role-based access guard (ADMIN vs CASHIER)
 - [ ] Base error-handling middleware (per `docs/architecture/error-handling.md`)
 
-## Day 4 — Electron + React shell (planned)
-- [ ] Electron main process boot (window management, IPC bridge)
-- [ ] React + Vite renderer scaffold
-- [ ] Router + layout shell (sidebar, top bar) per design references
-- [ ] i18n setup (i18next) with `en`/`ur` base files + RTL toggle
-- [ ] Zustand store scaffolding (auth store, cart store)
+## Day 3 — API skeleton ✅ VERIFIED WORKING
+- [x] Set up `apps/api` with modules: auth, users, inventory, sales, suppliers, salesmen, expenses, reports, settings
+- [x] Common utilities: env, logger, errors (5-category), error-handler middleware, validate middleware
+- [x] Database connection + WAL mode + foreign key enforcement (fixed: $queryRawUnsafe for WAL pragma
+since it returns a row, $executeRawUnsafe rejected it)
+- [x] Health check endpoint — verified: GET /api/health → 200 OK, database check passing
+- [x] main.ts entry point, all routers mounted, graceful shutdown
+- [x] Fixed tsconfig scoping issue between src/ (main build) and prisma/seed.ts (separate
+      tsconfig.seed.json) — db:seed verified working end-to-end
 
 ## Day 5 — Login & role routing (planned)
 - [ ] Login screen UI (per design reference)

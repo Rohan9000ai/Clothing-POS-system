@@ -5,6 +5,8 @@
  */
 
 import { PrismaClient } from "@prisma/client";
+import { env } from "../common/env";
+import { logger } from "../common/logger";
 
 declare global {
   // eslint-disable-next-line no-var
@@ -13,21 +15,25 @@ declare global {
 
 function createPrismaClient(): PrismaClient {
   const client = new PrismaClient({
-    log:
-      process.env.APP_ENV === "development"
-        ? ["query", "warn", "error"]
-        : ["warn", "error"],
+    log: env.isDev ? ["warn", "error"] : ["warn", "error"],
   });
 
   // Apply SQLite safety pragmas on every new connection.
-  // - WAL mode: much safer against crashes/power loss (important for Pakistan power cuts)
-  // - foreign_keys ON: enforce all FK constraints defined in schema.prisma
-  client.$executeRawUnsafe("PRAGMA journal_mode = WAL;").catch((err) => {
-    console.error("[prisma] failed to enable WAL mode:", err);
-  });
-  client.$executeRawUnsafe("PRAGMA foreign_keys = ON;").catch((err) => {
-    console.error("[prisma] failed to enable foreign key enforcement:", err);
-  });
+  // NOTE: `PRAGMA journal_mode = WAL` returns a row (the resulting mode),
+  // so it must go through $queryRawUnsafe, not $executeRawUnsafe (which
+  // rejects any statement that returns rows). `PRAGMA foreign_keys = ON`
+  // returns no rows, so $executeRawUnsafe is correct for that one.
+  client
+    .$queryRawUnsafe("PRAGMA journal_mode = WAL;")
+    .then(() => logger.debug("SQLite WAL mode enabled"))
+    .catch((err) => logger.error("Failed to enable WAL mode", { err: String(err) }));
+
+  client
+    .$executeRawUnsafe("PRAGMA foreign_keys = ON;")
+    .then(() => logger.debug("SQLite foreign key enforcement enabled"))
+    .catch((err) =>
+      logger.error("Failed to enable foreign key enforcement", { err: String(err) })
+    );
 
   return client;
 }
@@ -36,6 +42,23 @@ function createPrismaClient(): PrismaClient {
 // exhausting database connections.
 export const prisma = globalThis.__prisma ?? createPrismaClient();
 
-if (process.env.APP_ENV === "development") {
+if (env.isDev) {
   globalThis.__prisma = prisma;
+}
+
+/**
+ * Used by the health check endpoint and by startup checks — confirms the
+ * database is actually reachable, not just that the client object exists.
+ */
+export async function checkDatabaseConnection(): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await prisma.$queryRawUnsafe("SELECT 1;");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function disconnectDatabase(): Promise<void> {
+  await prisma.$disconnect();
 }
