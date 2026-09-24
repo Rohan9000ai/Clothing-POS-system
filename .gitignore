@@ -86,3 +86,4 @@ Thumbs.db
 .cache/
 .turbo/
 *.local
+apps/desktop/dist-electron/

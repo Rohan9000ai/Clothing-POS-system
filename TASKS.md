@@ -29,12 +29,6 @@ Legend: `[ ]` to do · `[~]` in progress · `[x]` done
 - [x] Note: SQLite doesn't support native Prisma `enum` — all enum-like fields are `String` columns,
 with allowed values defined in `packages/types/enums.ts` for TypeScript-side safety
 
-## Day 3 — Backend core (planned)
-- [ ] `apps/api` module scaffolding for auth, users, inventory, sales, suppliers, salesmen, expenses, settings
-- [ ] Auth service (login, password hashing with Argon2, session/JWT issuing)
-- [ ] Role-based access guard (ADMIN vs CASHIER)
-- [ ] Base error-handling middleware (per `docs/architecture/error-handling.md`)
-
 ## Day 3 — API skeleton ✅ VERIFIED WORKING
 - [x] Set up `apps/api` with modules: auth, users, inventory, sales, suppliers, salesmen, expenses, reports, settings
 - [x] Common utilities: env, logger, errors (5-category), error-handler middleware, validate middleware
@@ -45,6 +39,19 @@ since it returns a row, $executeRawUnsafe rejected it)
 - [x] Fixed tsconfig scoping issue between src/ (main build) and prisma/seed.ts (separate
       tsconfig.seed.json) — db:seed verified working end-to-end
 
+## Day 4 — Desktop shell ✅ VERIFIED WORKING
+- [x] Electron main + preload set up (contextIsolation on, nodeIntegration off)
+- [x] React + TypeScript + Vite + Tailwind + React Router configured
+- [x] Basic window, app layout, sidebar (9 nav items), topbar (shop name + live clock)
+- [x] Renderer connected to API health check — polls every 15s, shows
+      Connected/Degraded/Disconnected status live on the dashboard
+- [x] Fixed: Electron/esbuild install-scripts needed approval (same pattern as Day 2's argon2)
+- [x] Fixed: tsconfig.main.json module/moduleResolution must both be "Node16" together
+- [x] Fixed: tsconfig.json baseUrl deprecation, VS Code Tailwind CSS lint noise
+- [x] Confirmed: requires apps/api AND apps/desktop dev servers running simultaneously
+      in separate terminals during development
+
+      
 ## Day 5 — Login & role routing (planned)
 - [ ] Login screen UI (per design reference)
 - [ ] Auth flow wired to backend
