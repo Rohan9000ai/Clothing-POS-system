@@ -1,10 +1,13 @@
 {
   "extends": "../../packages/config/tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": "src",
+    "noEmit": true,
     "module": "Node16",
-    "moduleResolution": "Node16"
+    "moduleResolution": "Node16",
+    "paths": {
+      "@muzammil-pos/types": ["../../packages/types/index.ts"],
+      "@muzammil-pos/validation": ["../../packages/validation/index.ts"]
+    }
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist", "prisma"]

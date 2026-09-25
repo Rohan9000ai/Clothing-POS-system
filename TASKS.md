@@ -51,13 +51,24 @@ since it returns a row, $executeRawUnsafe rejected it)
 - [x] Confirmed: requires apps/api AND apps/desktop dev servers running simultaneously
       in separate terminals during development
 
-      
-## Day 5 — Login & role routing (planned)
-- [ ] Login screen UI (per design reference)
-- [ ] Auth flow wired to backend
-- [ ] Redirect to Admin Dashboard or Cashier POS based on role
-- [ ] Session persistence + logout
 
+## Day 6 — Auth backend ✅ VERIFIED WORKING
+- [x] User model already existed (Day 2) — password hashing via argon2 confirmed working end-to-end
+- [x] Login endpoint (`POST /api/auth/login`) — validates credentials, checks ACTIVE status,
+      returns JWT + safe user object (no password hash exposed)
+- [x] JWT session handling (`apps/api/src/common/jwt.ts`) — sign/verify, configurable expiry via `AUTH_TOKEN_EXPIRY`
+- [x] `requireAuth` middleware — verifies Bearer token, attaches `req.user`
+- [x] `requireRole("ADMIN" | "CASHIER")` middleware — role-based route guarding, tested and confirmed
+      blocking unauthorized access with proper 401/403 + AppError categories
+- [x] `GET /api/auth/me` — returns current authenticated user from token
+- [x] `POST /api/auth/logout` — stateless JWT logout endpoint (client discards token)
+- [x] Admin-only user registration (`POST /api/users`, guarded by `requireRole("ADMIN")`) —
+      verified: duplicate username rejected, password hashed, safe fields returned
+- [x] `GET /api/users` — admin-only user listing, verified working
+- [x] Resolved tsconfig `rootDir` conflict from shared package `paths` mapping — set `noEmit: true`
+      for `apps/api` (type-check only; `tsx` handles runtime execution, proper build config deferred
+      to packaging phase)
+      
 ## Day 6+ — Feature build-out (planned, one feature per day/session)
 - [ ] Admin Dashboard (KPIs, 7-day chart, recent sales, low stock)
 - [ ] Inventory (list, add/edit product + variants, images)
