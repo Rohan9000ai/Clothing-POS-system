@@ -127,6 +127,20 @@ export const Errors = {
       403,
       { requiredRole }
     ),
+
+  cannotRemoveLastAdmin: () =>
+    new BusinessError(
+      "CANNOT_REMOVE_LAST_ADMIN",
+      "errors.business.cannotRemoveLastAdmin",
+      "This is the only active admin account. Activate or create another admin before disabling, deleting, or changing this account's role."
+    ),
+  userHasRelatedRecords: (username: string) =>
+    new BusinessError(
+      "USER_HAS_RELATED_RECORDS",
+      "errors.business.userHasRelatedRecords",
+      `User "${username}" has existing sales, expenses, or other records and cannot be permanently deleted. Deactivate the account instead.`
+    ),
+    
   sessionExpired: () =>
     new AuthError(
       "SESSION_EXPIRED",

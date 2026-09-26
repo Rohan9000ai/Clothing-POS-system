@@ -39,6 +39,7 @@ since it returns a row, $executeRawUnsafe rejected it)
 - [x] Fixed tsconfig scoping issue between src/ (main build) and prisma/seed.ts (separate
       tsconfig.seed.json) — db:seed verified working end-to-end
 
+
 ## Day 4 — Desktop shell ✅ VERIFIED WORKING
 - [x] Electron main + preload set up (contextIsolation on, nodeIntegration off)
 - [x] React + TypeScript + Vite + Tailwind + React Router configured
@@ -69,23 +70,20 @@ since it returns a row, $executeRawUnsafe rejected it)
       for `apps/api` (type-check only; `tsx` handles runtime execution, proper build config deferred
       to packaging phase)
       
-## Day 6+ — Feature build-out (planned, one feature per day/session)
-- [ ] Admin Dashboard (KPIs, 7-day chart, recent sales, low stock)
-- [ ] Inventory (list, add/edit product + variants, images)
-- [ ] Cashier POS billing screen + invoice creation (transactional)
-- [ ] Thermal + PDF invoice printing
-- [ ] Sales ledger (view/void/print/search)
-- [ ] Suppliers + supplier transactions
-- [ ] Salesmen management
-- [ ] Expenses (add/list/filter/print PDF)
-- [ ] Reports center (receivables, payables, sales, stock, financial, profit/loss)
-- [ ] Users management
-- [ ] Settings (receipt config with live preview)
-- [ ] Backup & restore (automatic + manual, versioned)
-- [ ] Audit logging across critical actions
-- [ ] Low stock alert wiring (threshold from settings)
-- [ ] Full Urdu translation pass + RTL QA
-- [ ] Packaging with electron-builder → installable app for the shop PC
+
+## Day 7 — Users module backend ✅ VERIFIED WORKING
+- [x] Full CRUD: list, get by id, create, update (name/role), change password, toggle status, delete
+- [x] Validation: unique username (checked on create), password strength (min 6 chars, at least
+      one letter + one number — shared `passwordSchema` in `packages/validation/common.ts`),
+      role restricted to ADMIN/CASHIER via Zod enum
+- [x] Business rule: last active admin cannot be demoted, deactivated, or deleted
+      (`cannotRemoveLastAdmin` guard) — verified blocking correctly with 409
+- [x] Business rule: users with related records (sales, expenses, supplier transactions,
+      inventory movements, audit logs) cannot be hard-deleted — soft status change required instead
+      (per coding-standards.md "soft status fields instead of hard deletes")
+- [x] All routes admin-only (`requireRole("ADMIN")` applied at router level via `.use()`)
+- [x] Fixed `noUncheckedIndexedAccess` route-param typing issue with a shared `requireParam()` helper
+      (`apps/api/src/common/request-params.ts`) instead of unsafe casts
 
 ---
 

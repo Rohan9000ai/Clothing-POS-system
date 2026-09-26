@@ -25,6 +25,18 @@ export const cnicSchema = z
   .string()
   .regex(/^\d{5}-\d{7}-\d{1}$/, "CNIC must be in the format 12345-1234567-1.");
 
+/**
+ * Shared password strength rule — used for both new user creation and
+ * password changes. At least 6 characters, and must contain at least one
+ * letter and one number. Kept simple/practical for shop staff who may not
+ * be tech-savvy, while still avoiding trivially weak passwords like "111111".
+ */
+export const passwordSchema = z
+  .string()
+  .min(6, "Password must be at least 6 characters.")
+  .regex(/[A-Za-z]/, "Password must contain at least one letter.")
+  .regex(/[0-9]/, "Password must contain at least one number.");
+
 export const paginationQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   pageSize: z.coerce.number().int().positive().max(100).default(20),
