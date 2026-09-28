@@ -8,6 +8,7 @@ import { ComingSoonScreen } from "../../components/ComingSoonScreen";
 import { RequireAuth } from "./RequireAuth";
 import { RoleRedirect } from "./RoleRedirect";
 import { useAuthStore } from "../../store/authStore";
+import { UsersScreen } from "../../features/users/UsersScreen";
 
 export function AppRouter() {
   const restoreSession = useAuthStore((s) => s.restoreSession);
@@ -48,7 +49,7 @@ export function AppRouter() {
           <Route path="/salesmen" element={<ComingSoonScreen titleKey="Salesmen" />} />
           <Route path="/expenses" element={<ComingSoonScreen titleKey="Expenses" />} />
           <Route path="/reports" element={<ComingSoonScreen titleKey="Reports" />} />
-          <Route path="/users" element={<ComingSoonScreen titleKey="Users" />} />
+          <Route path="/users" element={<UsersScreen />} />
           <Route path="/settings" element={<ComingSoonScreen titleKey="Settings" />} />
         </Route>
 
