@@ -2,13 +2,19 @@ import { useEffect } from "react";
 import { HashRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "../layout/AppLayout";
 import { AdminDashboardScreen } from "../../features/admin-dashboard/AdminDashboardScreen";
+import { InventoryScreen } from "../../features/inventory/InventoryScreen";
+import { SalesScreen } from "../../features/sales/SalesScreen";
+import { SuppliersScreen } from "../../features/suppliers/SuppliersScreen";
+import { SalesmenScreen } from "../../features/salesmen/SalesmenScreen";
+import { ExpensesScreen } from "../../features/expenses/ExpensesScreen";
+import { ReportsScreen } from "../../features/reports/ReportsScreen";
+import { UsersScreen } from "../../features/users/UsersScreen";
+import { SettingsScreen } from "../../features/settings/SettingsScreen";
 import { LoginScreen } from "../../features/auth/LoginScreen";
 import { CashierPosScreen } from "../../features/cashier-pos/CashierPosScreen";
-import { ComingSoonScreen } from "../../components/ComingSoonScreen";
 import { RequireAuth } from "./RequireAuth";
 import { RoleRedirect } from "./RoleRedirect";
 import { useAuthStore } from "../../store/authStore";
-import { UsersScreen } from "../../features/users/UsersScreen";
 
 export function AppRouter() {
   const restoreSession = useAuthStore((s) => s.restoreSession);
@@ -24,7 +30,7 @@ export function AppRouter() {
       <Routes>
         <Route path="/login" element={<LoginScreen />} />
 
-        {/* Cashier home — no sidebar/topbar shell, full-screen billing UI */}
+        {/* Cashier home: full-screen billing UI, no sidebar/topbar shell */}
         <Route
           path="/pos"
           element={
@@ -34,7 +40,7 @@ export function AppRouter() {
           }
         />
 
-        {/* Admin shell — sidebar + topbar layout, admin-only */}
+        {/* Admin shell: sidebar + topbar, admin-only */}
         <Route
           element={
             <RequireAuth allowedRoles={["ADMIN"]}>
@@ -43,17 +49,17 @@ export function AppRouter() {
           }
         >
           <Route path="/" element={<AdminDashboardScreen />} />
-          <Route path="/inventory" element={<ComingSoonScreen titleKey="Inventory" />} />
-          <Route path="/sales" element={<ComingSoonScreen titleKey="Sales" />} />
-          <Route path="/suppliers" element={<ComingSoonScreen titleKey="Suppliers" />} />
-          <Route path="/salesmen" element={<ComingSoonScreen titleKey="Salesmen" />} />
-          <Route path="/expenses" element={<ComingSoonScreen titleKey="Expenses" />} />
-          <Route path="/reports" element={<ComingSoonScreen titleKey="Reports" />} />
+          <Route path="/inventory" element={<InventoryScreen />} />
+          <Route path="/sales" element={<SalesScreen />} />
+          <Route path="/suppliers" element={<SuppliersScreen />} />
+          <Route path="/salesmen" element={<SalesmenScreen />} />
+          <Route path="/expenses" element={<ExpensesScreen />} />
+          <Route path="/reports" element={<ReportsScreen />} />
           <Route path="/users" element={<UsersScreen />} />
-          <Route path="/settings" element={<ComingSoonScreen titleKey="Settings" />} />
+          <Route path="/settings" element={<SettingsScreen />} />
         </Route>
 
-        {/* Any unmatched path — send logged-in users home by role, others to login */}
+        {/* Any unmatched path: send logged-in users home by role, others to login */}
         <Route path="*" element={<RoleRedirect />} />
       </Routes>
     </HashRouter>
