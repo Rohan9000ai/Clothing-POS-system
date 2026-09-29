@@ -10,6 +10,9 @@ import {
   createProductSchema,
   updateProductSchema,
   toggleProductStatusSchema,
+  createProductVariantSchema,
+  updateProductVariantSchema,
+  toggleProductVariantStatusSchema,
 } from "@muzammil-pos/validation";
 import {
   getCategories,
@@ -29,6 +32,14 @@ import {
   deleteProductImageHandler,
   patchProductImagePrimary,
 } from "./products.controller";
+import {
+  getVariants,
+  getVariant,
+  postVariant,
+  patchVariant,
+  patchVariantStatus,
+  deleteVariantHandler,
+} from "./variants.controller";
 
 export const inventoryRouter = Router();
 
@@ -56,8 +67,7 @@ inventoryRouter.patch(
 );
 inventoryRouter.delete("/categories/:id", requireRole("ADMIN"), asyncHandler(deleteCategoryHandler));
 
-// Products — read open to any authenticated user (cashier will need this for
-// billing later), writes admin-only.
+// Products — read open to any authenticated user (cashier billing needs this later), writes admin-only.
 inventoryRouter.get("/products", asyncHandler(getProducts));
 inventoryRouter.get("/products/:id", asyncHandler(getProduct));
 inventoryRouter.post(
@@ -96,4 +106,31 @@ inventoryRouter.patch(
   "/products/:id/images/:imageId/primary",
   requireRole("ADMIN"),
   asyncHandler(patchProductImagePrimary)
+);
+
+// Product variants — read open to any authenticated user, writes admin-only.
+inventoryRouter.get("/products/:id/variants", asyncHandler(getVariants));
+inventoryRouter.get("/products/:id/variants/:variantId", asyncHandler(getVariant));
+inventoryRouter.post(
+  "/products/:id/variants",
+  requireRole("ADMIN"),
+  validate(createProductVariantSchema),
+  asyncHandler(postVariant)
+);
+inventoryRouter.patch(
+  "/products/:id/variants/:variantId",
+  requireRole("ADMIN"),
+  validate(updateProductVariantSchema),
+  asyncHandler(patchVariant)
+);
+inventoryRouter.patch(
+  "/products/:id/variants/:variantId/status",
+  requireRole("ADMIN"),
+  validate(toggleProductVariantStatusSchema),
+  asyncHandler(patchVariantStatus)
+);
+inventoryRouter.delete(
+  "/products/:id/variants/:variantId",
+  requireRole("ADMIN"),
+  asyncHandler(deleteVariantHandler)
 );

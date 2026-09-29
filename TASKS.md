@@ -85,7 +85,15 @@ since it returns a row, $executeRawUnsafe rejected it)
 - [x] Fixed `noUncheckedIndexedAccess` route-param typing issue with a shared `requireParam()` helper
       (`apps/api/src/common/request-params.ts`) instead of unsafe casts
 
----
+## Day 11 — Categories & products backend ✅ VERIFIED WORKING
+- [x] Categories CRUD: list, create (unique name), delete-blocked-when-products-exist
+      (verified: 409 CATEGORY_HAS_PRODUCTS returned correctly)
+- [x] Products CRUD: create (validates category exists), list, get by id — verified working
+- [x] Product image upload: multer config, disk storage under database/uploads/products/,
+      static serving via /uploads route — verified end-to-end: uploaded a real file,
+      confirmed it's attached to the product with primaryImageUrl auto-set, confirmed the
+      file renders correctly when opened directly in a browser
+- [x] Money fields confirmed stored/returned correctly in paisa (basePrice 150000 = Rs. 1,500)
 
 ## Notes / decisions log
 - v1 is desktop-only, single PC, SQLite. Multi-terminal (PostgreSQL) is a future upgrade, not part of v1.

@@ -6,7 +6,8 @@
     "moduleResolution": "Node16",
     "paths": {
       "@muzammil-pos/types": ["../../packages/types/index.ts"],
-      "@muzammil-pos/validation": ["../../packages/validation/index.ts"]
+      "@muzammil-pos/validation": ["../../packages/validation/index.ts"],
+      "@muzammil-pos/utils": ["../../packages/utils/index.ts"]
     }
   },
   "include": ["src/**/*.ts"],

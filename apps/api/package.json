@@ -28,7 +28,8 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
     "@muzammil-pos/types": "*",
-    "@muzammil-pos/validation": "*"
+    "@muzammil-pos/validation": "*",
+    "@muzammil-pos/utils": "*"
   },
   "devDependencies": {
     "prisma": "^5.22.0",

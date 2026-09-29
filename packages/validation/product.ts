@@ -9,6 +9,19 @@ export const createProductVariantSchema = z.object({
 });
 export type CreateProductVariantInput = z.infer<typeof createProductVariantSchema>;
 
+export const updateProductVariantSchema = z.object({
+  size: z.string().min(1, "Size is required.").optional(),
+  color: z.string().min(1, "Color is required.").optional(),
+  quantity: wholeQuantitySchema.optional(),
+  priceOverride: moneySchema.nullable().optional(),
+});
+export type UpdateProductVariantInput = z.infer<typeof updateProductVariantSchema>;
+
+export const toggleProductVariantStatusSchema = z.object({
+  status: z.enum(["ACTIVE", "INACTIVE"]),
+});
+export type ToggleProductVariantStatusInput = z.infer<typeof toggleProductVariantStatusSchema>;
+
 export const createProductSchema = z.object({
   name: z.string().min(2, "Product name is required."),
   categoryId: z.string().min(1, "Category is required."),

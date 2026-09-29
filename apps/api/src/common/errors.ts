@@ -171,4 +171,17 @@ export const Errors = {
       "errors.business.productHasRelatedRecords",
       `Product "${productName}" has variants or sales history and cannot be permanently deleted. Deactivate it instead.`
     ),
+  duplicateVariant: (size: string, color: string) =>
+    new BusinessError(
+      "DUPLICATE_VARIANT",
+      "errors.business.duplicateVariant",
+      `A variant with size "${size}" and color "${color}" already exists for this product.`,
+      { size, color }
+    ),
+  variantHasRelatedRecords: (variantLabel: string) =>
+    new BusinessError(
+      "VARIANT_HAS_RELATED_RECORDS",
+      "errors.business.variantHasRelatedRecords",
+      `Variant "${variantLabel}" has sales history and cannot be permanently deleted. Deactivate it instead.`
+    ),
 };
