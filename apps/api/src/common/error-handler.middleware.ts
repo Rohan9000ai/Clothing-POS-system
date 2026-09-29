@@ -9,6 +9,7 @@
  */
 
 import type { NextFunction, Request, Response } from "express";
+import multer from "multer";
 import { AppError } from "./errors";
 import { logger } from "./logger";
 
@@ -32,6 +33,38 @@ export function errorHandlerMiddleware(
         messageKey: err.messageKey,
         message: err.message, // dev-facing fallback; UI should prefer messageKey via i18n
         details: err.details,
+      },
+    });
+  }
+
+  // File uploads: multer's own errors (too large, too many files, etc.)
+  if (err instanceof multer.MulterError) {
+    logger.error(`[UPLOAD] ${err.code}: ${err.message}`, { path: req.path, method: req.method });
+    const message =
+      err.code === "LIMIT_FILE_SIZE"
+        ? "Image file is too large."
+        : err.code === "LIMIT_FILE_COUNT" || err.code === "LIMIT_UNEXPECTED_FILE"
+          ? "Too many image files uploaded at once (max 5)."
+          : "Image upload failed.";
+    return res.status(400).json({
+      error: {
+        category: "INPUT",
+        code: `UPLOAD_${err.code}`,
+        messageKey: "errors.input.invalidImageFile",
+        message,
+      },
+    });
+  }
+
+  // File uploads: our own file-type rejection from common/upload.ts's fileFilter
+  if (err instanceof Error && err.message === "INVALID_IMAGE_FILE") {
+    logger.error("[UPLOAD] Rejected file with invalid type", { path: req.path, method: req.method });
+    return res.status(400).json({
+      error: {
+        category: "INPUT",
+        code: "INVALID_IMAGE_FILE",
+        messageKey: "errors.input.invalidImageFile",
+        message: "Only JPG, PNG or WEBP images are allowed.",
       },
     });
   }

@@ -14,6 +14,18 @@ export const createProductSchema = z.object({
   categoryId: z.string().min(1, "Category is required."),
   basePrice: moneySchema,
   costPrice: moneySchema.nullable().optional(),
-  variants: z.array(createProductVariantSchema).min(1, "At least one variant is required."),
 });
 export type CreateProductInput = z.infer<typeof createProductSchema>;
+
+export const updateProductSchema = z.object({
+  name: z.string().min(2, "Product name is required.").optional(),
+  categoryId: z.string().min(1, "Category is required.").optional(),
+  basePrice: moneySchema.optional(),
+  costPrice: moneySchema.nullable().optional(),
+});
+export type UpdateProductInput = z.infer<typeof updateProductSchema>;
+
+export const toggleProductStatusSchema = z.object({
+  status: z.enum(["ACTIVE", "INACTIVE"]),
+});
+export type ToggleProductStatusInput = z.infer<typeof toggleProductStatusSchema>;

@@ -24,6 +24,13 @@ function optional(name: string, fallback: string): string {
   return value && value.trim() !== "" ? value : fallback;
 }
 
+// Absolute path to apps/api, used as the anchor for resolving other
+// relative paths (uploads, backups, logs) consistently regardless of
+// which file does the resolving.
+const apiRootDir = path.resolve(__dirname, "../..");
+
+const uploadsDirRaw = optional("UPLOADS_DIR", "../../database/uploads");
+
 export const env = {
   appName: optional("APP_NAME", "Muzammil Store POS"),
   appEnv: optional("APP_ENV", "development"),
@@ -46,6 +53,10 @@ export const env = {
   receiptPaperWidthMm: Number(optional("RECEIPT_PAPER_WIDTH_MM", "80")),
 
   reportsOutputDir: optional("REPORTS_OUTPUT_DIR", "../../database/reports"),
+
+  uploadsDir: uploadsDirRaw,
+  uploadsRootDir: path.resolve(apiRootDir, uploadsDirRaw),
+  maxUploadSizeMb: Number(optional("MAX_UPLOAD_SIZE_MB", "10")),
 
   logLevel: optional("LOG_LEVEL", "info") as "debug" | "info" | "warn" | "error",
   logDir: optional("LOG_DIR", "../../database/logs"),

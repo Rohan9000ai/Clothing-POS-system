@@ -127,20 +127,6 @@ export const Errors = {
       403,
       { requiredRole }
     ),
-
-  cannotRemoveLastAdmin: () =>
-    new BusinessError(
-      "CANNOT_REMOVE_LAST_ADMIN",
-      "errors.business.cannotRemoveLastAdmin",
-      "This is the only active admin account. Activate or create another admin before disabling, deleting, or changing this account's role."
-    ),
-  userHasRelatedRecords: (username: string) =>
-    new BusinessError(
-      "USER_HAS_RELATED_RECORDS",
-      "errors.business.userHasRelatedRecords",
-      `User "${username}" has existing sales, expenses, or other records and cannot be permanently deleted. Deactivate the account instead.`
-    ),
-    
   sessionExpired: () =>
     new AuthError(
       "SESSION_EXPIRED",
@@ -160,5 +146,29 @@ export const Errors = {
       "errors.system.databaseUnavailable",
       "Database is currently unavailable.",
       details
+    ),
+  cannotRemoveLastAdmin: () =>
+    new BusinessError(
+      "CANNOT_REMOVE_LAST_ADMIN",
+      "errors.business.cannotRemoveLastAdmin",
+      "This is the only active admin account. Activate or create another admin before disabling, deleting, or changing this account's role."
+    ),
+  userHasRelatedRecords: (username: string) =>
+    new BusinessError(
+      "USER_HAS_RELATED_RECORDS",
+      "errors.business.userHasRelatedRecords",
+      `User "${username}" has existing sales, expenses, or other records and cannot be permanently deleted. Deactivate the account instead.`
+    ),
+  categoryHasProducts: (categoryName: string) =>
+    new BusinessError(
+      "CATEGORY_HAS_PRODUCTS",
+      "errors.business.categoryHasProducts",
+      `Category "${categoryName}" has products assigned to it and cannot be deleted. Deactivate it instead.`
+    ),
+  productHasRelatedRecords: (productName: string) =>
+    new BusinessError(
+      "PRODUCT_HAS_RELATED_RECORDS",
+      "errors.business.productHasRelatedRecords",
+      `Product "${productName}" has variants or sales history and cannot be permanently deleted. Deactivate it instead.`
     ),
 };

@@ -2,9 +2,8 @@
  * Muzammil Store POS — API entry point.
  *
  * Runs as a local Express service. In production this is embedded/launched
- * alongside the Electron app (wired up on Day 4); during development it can
- * be run standalone with `npm run dev --workspace=apps/api` and hit directly
- * at http://localhost:<API_PORT>.
+ * alongside the Electron app; during development it's run standalone with
+ * `npm run dev --workspace=apps/api` and hit directly at http://localhost:<API_PORT>.
  */
 
 import express from "express";
@@ -29,6 +28,10 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// Serve uploaded product images (e.g. /uploads/products/<file>) so the
+// desktop renderer can load them directly by URL.
+app.use("/uploads", express.static(env.uploadsRootDir));
 
 // ---- Routes ----
 app.use("/api/health", healthRouter);
@@ -73,8 +76,6 @@ async function bootstrap() {
     });
   });
 
-  // Graceful shutdown — always disconnect Prisma cleanly rather than
-  // letting the process die mid-write.
   const shutdown = async (signal: string) => {
     logger.info(`Received ${signal}, shutting down gracefully...`);
     server.close();
