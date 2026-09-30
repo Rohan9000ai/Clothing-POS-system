@@ -13,6 +13,7 @@ import {
   createProductVariantSchema,
   updateProductVariantSchema,
   toggleProductVariantStatusSchema,
+  adjustStockSchema,
 } from "@muzammil-pos/validation";
 import {
   getCategories,
@@ -40,6 +41,12 @@ import {
   patchVariantStatus,
   deleteVariantHandler,
 } from "./variants.controller";
+import {
+  postStockAdjustment,
+  getVariantMovements,
+  getLowStock,
+  getCashierProducts,
+} from "./stock.controller";
 
 export const inventoryRouter = Router();
 
@@ -66,6 +73,12 @@ inventoryRouter.patch(
   asyncHandler(patchCategoryStatus)
 );
 inventoryRouter.delete("/categories/:id", requireRole("ADMIN"), asyncHandler(deleteCategoryHandler));
+
+// Cashier-facing + low-stock queries — placed before the generic /products/:id
+// routes purely for readability; Express matches these literal paths fine
+// either way since none of them collide with a plain :id segment.
+inventoryRouter.get("/low-stock", asyncHandler(getLowStock));
+inventoryRouter.get("/cashier-products", asyncHandler(getCashierProducts));
 
 // Products — read open to any authenticated user (cashier billing needs this later), writes admin-only.
 inventoryRouter.get("/products", asyncHandler(getProducts));
@@ -134,3 +147,12 @@ inventoryRouter.delete(
   requireRole("ADMIN"),
   asyncHandler(deleteVariantHandler)
 );
+
+// Stock adjustments + movement history — admin-only to adjust, readable by any authenticated user.
+inventoryRouter.post(
+  "/products/:id/variants/:variantId/adjust",
+  requireRole("ADMIN"),
+  validate(adjustStockSchema),
+  asyncHandler(postStockAdjustment)
+);
+inventoryRouter.get("/products/:id/variants/:variantId/movements", asyncHandler(getVariantMovements));

@@ -22,6 +22,21 @@ export const toggleProductVariantStatusSchema = z.object({
 });
 export type ToggleProductVariantStatusInput = z.infer<typeof toggleProductVariantStatusSchema>;
 
+/**
+ * quantityChange can be positive (found extra stock, new delivery counted
+ * manually outside a supplier purchase flow) or negative (damaged goods,
+ * stock count correction, theft/loss) — but the resulting quantity can
+ * never go below 0.
+ */
+export const adjustStockSchema = z.object({
+  quantityChange: z
+    .number({ invalid_type_error: "Quantity change must be a number." })
+    .int("Quantity change must be a whole number.")
+    .refine((val) => val !== 0, "Quantity change cannot be zero."),
+  reason: z.string().min(2, "A reason is required for stock adjustments."),
+});
+export type AdjustStockInput = z.infer<typeof adjustStockSchema>;
+
 export const createProductSchema = z.object({
   name: z.string().min(2, "Product name is required."),
   categoryId: z.string().min(1, "Category is required."),

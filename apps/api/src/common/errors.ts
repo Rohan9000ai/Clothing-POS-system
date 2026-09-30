@@ -184,4 +184,11 @@ export const Errors = {
       "errors.business.variantHasRelatedRecords",
       `Variant "${variantLabel}" has sales history and cannot be permanently deleted. Deactivate it instead.`
     ),
+  adjustmentWouldGoNegative: (variantLabel: string, currentQuantity: number, quantityChange: number) =>
+    new BusinessError(
+      "ADJUSTMENT_WOULD_GO_NEGATIVE",
+      "errors.business.adjustmentWouldGoNegative",
+      `Cannot adjust "${variantLabel}" by ${quantityChange}: current stock is ${currentQuantity}, which would go below zero.`,
+      { currentQuantity, quantityChange }
+    ),
 };
