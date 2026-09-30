@@ -3,6 +3,9 @@ import { ApiRequestError } from "./auth";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4310/api";
 
+/** Origin only (no /api suffix) — used to build full URLs for uploaded files like product images. */
+export const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, "");
+
 /** Error thrown for any failed API call. Carries HTTP status and server details (e.g. field errors). */
 export class HttpError extends ApiRequestError {
   status: number;
@@ -20,6 +23,30 @@ export class HttpError extends ApiRequestError {
     this.status = status;
     this.details = details;
   }
+}
+
+async function resolveError(res: Response): Promise<HttpError> {
+  let errorBody: {
+    error?: { code?: string; category?: string; message?: string; details?: Record<string, unknown> };
+  } = {};
+  try {
+    errorBody = await res.json();
+  } catch {
+    // non-JSON error response — fall through to generic message
+  }
+  const err = errorBody.error;
+
+  if (res.status === 401 && err?.code === "SESSION_EXPIRED") {
+    useAuthStore.setState({ token: null, user: null });
+  }
+
+  return new HttpError(
+    err?.message ?? `Request failed with status ${res.status}`,
+    res.status,
+    err?.code,
+    err?.category,
+    err?.details
+  );
 }
 
 interface RequestOptions {
@@ -55,27 +82,34 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     );
   }
 
-  if (!res.ok) {
-    let errorBody: { error?: { code?: string; category?: string; message?: string; details?: Record<string, unknown> } } = {};
-    try {
-      errorBody = await res.json();
-    } catch {
-      // non-JSON error response — fall through to generic message
-    }
-    const err = errorBody.error;
+  if (!res.ok) throw await resolveError(res);
+  return res.json() as Promise<T>;
+}
 
-    if (res.status === 401 && err?.code === "SESSION_EXPIRED") {
-      useAuthStore.setState({ token: null, user: null });
-    }
+/**
+ * Authenticated multipart upload helper (used for product images). Content-Type
+ * is deliberately NOT set — the browser sets the correct multipart boundary
+ * automatically when given a FormData body; setting it manually breaks uploads.
+ */
+export async function apiUpload<T>(path: string, formData: FormData): Promise<T> {
+  const token = useAuthStore.getState().token;
 
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}${path}`, {
+      method: "POST",
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: formData,
+    });
+  } catch {
     throw new HttpError(
-      err?.message ?? `Request failed with status ${res.status}`,
-      res.status,
-      err?.code,
-      err?.category,
-      err?.details
+      "Could not reach the server. Make sure the app is fully started and try again.",
+      0,
+      "NETWORK_ERROR",
+      "SYSTEM"
     );
   }
 
+  if (!res.ok) throw await resolveError(res);
   return res.json() as Promise<T>;
 }
