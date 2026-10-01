@@ -7,6 +7,7 @@ export const saleItemSchema = z.object({
   quantity: wholeQuantitySchema.min(1, "Quantity must be at least 1."),
   lineDiscount: moneySchema.default(0),
 });
+export type SaleItemInput = z.infer<typeof saleItemSchema>;
 
 export const salePaymentSchema = z
   .object({
@@ -14,17 +15,22 @@ export const salePaymentSchema = z
     amount: moneySchema,
     referenceNo: z.string().optional(),
   })
-  .refine((data) => data.method === "CASH" || !!data.referenceNo, {
+  .refine((data) => data.method === "CASH" || !!data.referenceNo?.trim(), {
     message: "Reference number is required for non-cash payments.",
     path: ["referenceNo"],
   });
+export type SalePaymentInput = z.infer<typeof salePaymentSchema>;
 
 export const createSaleSchema = z.object({
-  customerId: z.string().min(1, "Customer is required."),
+  // Omitted -> resolved to the shared "Walk-in" customer server-side.
+  customerId: z.string().optional(),
   salesmanId: z.string().optional(),
   items: z.array(saleItemSchema).min(1, "Add at least one item to the sale."),
+  // Additional discount on top of any per-item discounts.
   discountTotal: moneySchema.default(0),
-  payments: z.array(salePaymentSchema).min(1, "At least one payment is required."),
+  // Empty array -> fully unpaid (credit) sale. paymentStatus is computed
+  // server-side from payments vs. net total, never trusted from the client.
+  payments: z.array(salePaymentSchema).default([]),
   notes: z.string().optional(),
 });
 export type CreateSaleInput = z.infer<typeof createSaleSchema>;

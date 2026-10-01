@@ -191,4 +191,29 @@ export const Errors = {
       `Cannot adjust "${variantLabel}" by ${quantityChange}: current stock is ${currentQuantity}, which would go below zero.`,
       { currentQuantity, quantityChange }
     ),
+  productNotSellable: (productName: string) =>
+    new BusinessError(
+      "PRODUCT_NOT_SELLABLE",
+      "errors.business.productNotSellable",
+      `Product "${productName}" is inactive and cannot be sold.`
+    ),
+  variantNotSellable: (variantLabel: string) =>
+    new BusinessError(
+      "VARIANT_NOT_SELLABLE",
+      "errors.business.variantNotSellable",
+      `Variant "${variantLabel}" is inactive and cannot be sold.`
+    ),
+  inactiveSalesman: (name: string) =>
+    new BusinessError(
+      "INACTIVE_SALESMAN",
+      "errors.business.inactiveSalesman",
+      `Salesman "${name}" is inactive and cannot be assigned to a sale.`
+    ),
+  paymentExceedsNetTotal: (paidTotal: number, netTotal: number) =>
+    new BusinessError(
+      "PAYMENT_EXCEEDS_NET_TOTAL",
+      "errors.business.paymentExceedsNetTotal",
+      `Total payments (${paidTotal}) cannot exceed the net total (${netTotal}).`,
+      { paidTotal, netTotal }
+    ),
 };

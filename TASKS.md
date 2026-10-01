@@ -95,6 +95,25 @@ since it returns a row, $executeRawUnsafe rejected it)
       file renders correctly when opened directly in a browser
 - [x] Money fields confirmed stored/returned correctly in paisa (basePrice 150000 = Rs. 1,500)
 
+## Day 16 — Sales backend ✅ VERIFIED WORKING
+- [x] Sale creation: items, payments, auto-generated sequential bill number (MS-{year}-{00001})
+- [x] Full transaction: validate stock → save invoice → save sale items (with snapshots) →
+      save payments → atomically decrement stock → log inventory movement — all in one
+      Prisma $transaction, never half-saved
+- [x] Atomic stock decrement via conditional updateMany (quantity >= requested) to close the
+      race window between the pre-check and the write — safe against concurrent sales
+- [x] Payment methods: CASH, EASYPAISA, JAZZCASH, BANK_TRANSFER — verified non-cash payments
+      require a reference number (400 rejection confirmed)
+- [x] paymentStatus (PAID/PARTIAL/UNPAID) computed server-side from payments vs. net total,
+      never trusted from client input — verified PAID and PARTIAL cases
+- [x] Customer defaults to shared "Walk-in" record when omitted — verified
+- [x] Business guards verified: insufficient stock (409), inactive product/variant/salesman
+      blocked, discount cannot exceed subtotal, payment cannot exceed net total
+- [x] Sales list (paginated, searchable by bill no, filterable by status) and get-by-id —
+      both verified working
+- [x] New customers module added (apps/api/src/modules/customers/) — minimal, just enough
+      for Walk-in resolution; full customer CRUD not yet built
+
 ## Notes / decisions log
 - v1 is desktop-only, single PC, SQLite. Multi-terminal (PostgreSQL) is a future upgrade, not part of v1.
 - No barcode in v1 — schema fields (`product_code`, `variant_sku`, `bill_no`) kept barcode-ready.
