@@ -114,6 +114,23 @@ since it returns a row, $executeRawUnsafe rejected it)
 - [x] New customers module added (apps/api/src/modules/customers/) — minimal, just enough
       for Walk-in resolution; full customer CRUD not yet built
 
+## Day 17 — Sales backend: void, list, filter ✅ VERIFIED WORKING
+- [x] Void sale (admin-only): restores stock for every item, writes a VOID inventory
+      movement per item, appends a [VOIDED] reason note to the sale — all in one transaction
+- [x] Verified: stock restored exactly, movement history shows both SALE (-) and VOID (+)
+      entries for full auditability
+- [x] Business guards verified: cannot void an already-voided sale (409
+      SALE_ALREADY_VOIDED), reason is required (400 on empty string)
+- [x] Sales list filters: date range (dateFrom/dateTo), cashier (cashierId), status,
+      paymentStatus, search by bill no — all verified working, combinable
+- [x] Shared audit log helper (apps/api/src/common/audit-log.ts) — accepts either the
+      main Prisma client or a transaction client, so audit entries are written inside
+      the SAME transaction as the action they record (never logged without the action
+      succeeding, or vice versa)
+- [x] SALE_CREATED and SALE_VOIDED audit entries now written on every sale/void — table
+      was defined since Day 2 but unused until now; no dedicated read endpoint yet
+      (natural fit for the Reports module later)
+      
 ## Notes / decisions log
 - v1 is desktop-only, single PC, SQLite. Multi-terminal (PostgreSQL) is a future upgrade, not part of v1.
 - No barcode in v1 — schema fields (`product_code`, `variant_sku`, `bill_no`) kept barcode-ready.

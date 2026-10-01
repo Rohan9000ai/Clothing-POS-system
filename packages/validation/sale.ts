@@ -34,3 +34,8 @@ export const createSaleSchema = z.object({
   notes: z.string().optional(),
 });
 export type CreateSaleInput = z.infer<typeof createSaleSchema>;
+
+export const voidSaleSchema = z.object({
+  reason: z.string().min(3, "A reason is required to void a sale."),
+});
+export type VoidSaleInput = z.infer<typeof voidSaleSchema>;

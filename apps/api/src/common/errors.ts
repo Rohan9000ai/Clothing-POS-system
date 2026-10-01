@@ -216,4 +216,10 @@ export const Errors = {
       `Total payments (${paidTotal}) cannot exceed the net total (${netTotal}).`,
       { paidTotal, netTotal }
     ),
+  saleAlreadyVoided: (billNo: string) =>
+    new BusinessError(
+      "SALE_ALREADY_VOIDED",
+      "errors.business.saleAlreadyVoided",
+      `Sale "${billNo}" has already been voided.`
+    ),
 };

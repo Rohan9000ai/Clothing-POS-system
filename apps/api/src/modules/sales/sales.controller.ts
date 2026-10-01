@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { requireParam } from "../../common/request-params";
 import { Errors } from "../../common/errors";
-import { createSale, getSaleById, listSales } from "./sales.service";
+import { createSale, getSaleById, voidSale, listSales } from "./sales.service";
 
 export async function postSale(req: Request, res: Response) {
   if (!req.user) throw Errors.sessionExpired();
@@ -15,6 +15,13 @@ export async function getSale(req: Request, res: Response) {
   res.status(200).json({ sale });
 }
 
+export async function postVoidSale(req: Request, res: Response) {
+  const id = requireParam(req, "id");
+  if (!req.user) throw Errors.sessionExpired();
+  const sale = await voidSale(id, req.body, req.user.id);
+  res.status(200).json({ sale });
+}
+
 export async function getSales(req: Request, res: Response) {
   const q = req.query as Record<string, string | undefined>;
   const result = await listSales({
@@ -23,6 +30,9 @@ export async function getSales(req: Request, res: Response) {
     search: q.search,
     status: q.status,
     paymentStatus: q.paymentStatus,
+    cashierId: q.cashierId,
+    dateFrom: q.dateFrom,
+    dateTo: q.dateTo,
   });
   res.status(200).json(result);
 }

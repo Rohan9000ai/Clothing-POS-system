@@ -1,8 +1,9 @@
 import { prisma } from "../../database/prisma";
 import { Errors } from "../../common/errors";
+import { recordAuditLog } from "../../common/audit-log";
 import { generateBillNo } from "@muzammil-pos/utils";
 import { getOrCreateWalkInCustomer, getCustomerById } from "../customers/customers.service";
-import type { CreateSaleInput } from "@muzammil-pos/validation";
+import type { CreateSaleInput, VoidSaleInput } from "@muzammil-pos/validation";
 import type { PaginationQuery } from "@muzammil-pos/types";
 
 const SALE_INCLUDE = {
@@ -126,8 +127,8 @@ export async function createSale(input: CreateSaleInput, cashierId: string) {
   const billNo = await generateUniqueBillNo();
 
   // ---- Everything below is ONE transaction: validate stock, save invoice,
-  //      save payments, decrement stock. A sale is never left half-saved —
-  //      see docs/architecture/error-handling.md. ----
+  //      save payments, decrement stock, write the audit trail. A sale is
+  //      never left half-saved — see docs/architecture/error-handling.md. ----
   return prisma.$transaction(async (tx) => {
     const sale = await tx.sale.create({
       data: {
@@ -196,6 +197,14 @@ export async function createSale(input: CreateSaleInput, cashierId: string) {
       });
     }
 
+    await recordAuditLog(tx, {
+      userId: cashierId,
+      action: "SALE_CREATED",
+      entity: "Sale",
+      entityId: sale.id,
+      newData: { billNo: sale.billNo, netTotal, paymentStatus, itemCount: preparedItems.length },
+    });
+
     return tx.sale.findUniqueOrThrow({ where: { id: sale.id }, include: SALE_INCLUDE });
   });
 }
@@ -206,19 +215,76 @@ export async function getSaleById(id: string) {
   return sale;
 }
 
+export async function voidSale(id: string, input: VoidSaleInput, voidedById: string) {
+  const sale = await prisma.sale.findUnique({ where: { id }, include: { items: true } });
+  if (!sale) throw Errors.notFound("Sale", id);
+  if (sale.saleStatus === "VOID") throw Errors.saleAlreadyVoided(sale.billNo);
+
+  return prisma.$transaction(async (tx) => {
+    for (const item of sale.items) {
+      // Restore the exact quantity this item removed at sale time.
+      await tx.productVariant.update({
+        where: { id: item.variantId },
+        data: { quantity: { increment: item.quantity } },
+      });
+
+      await tx.inventoryMovement.create({
+        data: {
+          variantId: item.variantId,
+          movementType: "VOID",
+          quantityChange: item.quantity,
+          referenceType: "SALE_VOID",
+          referenceId: sale.id,
+          createdById: voidedById,
+        },
+      });
+    }
+
+    const voidedNote = `[VOIDED] ${input.reason}`;
+    const updated = await tx.sale.update({
+      where: { id },
+      data: {
+        saleStatus: "VOID",
+        notes: sale.notes ? `${sale.notes}\n${voidedNote}` : voidedNote,
+      },
+      include: SALE_INCLUDE,
+    });
+
+    await recordAuditLog(tx, {
+      userId: voidedById,
+      action: "SALE_VOIDED",
+      entity: "Sale",
+      entityId: sale.id,
+      oldData: { saleStatus: "COMPLETED" },
+      newData: { saleStatus: "VOID", reason: input.reason, billNo: sale.billNo },
+    });
+
+    return updated;
+  });
+}
+
 interface ListSalesQuery extends PaginationQuery {
   status?: string;
   paymentStatus?: string;
+  cashierId?: string;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 export async function listSales(query: ListSalesQuery) {
   const page = query.page && !Number.isNaN(query.page) ? query.page : 1;
   const pageSize = query.pageSize && !Number.isNaN(query.pageSize) ? query.pageSize : 20;
 
+  const saleDateFilter: { gte?: Date; lte?: Date } = {};
+  if (query.dateFrom) saleDateFilter.gte = new Date(query.dateFrom);
+  if (query.dateTo) saleDateFilter.lte = new Date(query.dateTo);
+
   const where = {
     ...(query.search ? { billNo: { contains: query.search } } : {}),
     ...(query.status ? { saleStatus: query.status } : {}),
     ...(query.paymentStatus ? { paymentStatus: query.paymentStatus } : {}),
+    ...(query.cashierId ? { cashierId: query.cashierId } : {}),
+    ...(Object.keys(saleDateFilter).length > 0 ? { saleDate: saleDateFilter } : {}),
   };
 
   const [items, totalItems] = await Promise.all([
