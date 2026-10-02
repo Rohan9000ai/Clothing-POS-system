@@ -5,6 +5,7 @@ import { formatCurrency, fromPaisa, toPaisa } from "@muzammil-pos/utils";
 import type { Salesman } from "@muzammil-pos/types";
 import { useAuthStore } from "../../../store/authStore";
 import { useCartStore } from "../../../store/cartStore";
+import { PaymentModal } from "./PaymentModal";
 
 interface CartPanelProps {
   salesmen: Salesman[];
@@ -16,6 +17,7 @@ export function CartPanel({ salesmen }: CartPanelProps) {
     useCartStore();
 
   const [discountDrafts, setDiscountDrafts] = useState<Record<string, string>>({});
+  const [isPaymentOpen, setIsPaymentOpen] = useState(false);
 
   const subTotal = useMemo(() => items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0), [items]);
   const discountTotal = useMemo(() => items.reduce((sum, i) => sum + i.lineDiscount, 0), [items]);
@@ -150,13 +152,13 @@ export function CartPanel({ salesmen }: CartPanelProps) {
           <span>{formatCurrency(netTotal)}</span>
         </div>
 
-        <Button className="mt-3 w-full" disabled={items.length === 0}>
+        <Button className="mt-3 w-full" disabled={items.length === 0} onClick={() => setIsPaymentOpen(true)}>
           Proceed to payment
         </Button>
-        <p className="text-center text-[11px] text-gray-400">
-          Payment and invoice printing are added in the next step.
-        </p>
+        <p className="text-center text-[11px] text-gray-400">Invoice printing is added in the next step.</p>
       </div>
+
+      {isPaymentOpen && <PaymentModal onClose={() => setIsPaymentOpen(false)} />}
     </div>
   );
 }
