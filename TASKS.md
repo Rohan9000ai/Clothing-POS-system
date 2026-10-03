@@ -164,6 +164,23 @@ since it returns a row, $executeRawUnsafe rejected it)
       invoice or thermal receipt, confirmed working with a real test sale (MS-2026-00005)
 
 **Full Cashier POS flow is now complete end-to-end:** search → cart → payment → save → invoice → print.
+
+## Day 21 — Suppliers backend ✅ VERIFIED WORKING
+- [x] Supplier CRUD: create, list, get by id, update (name/phone/address), toggle status, delete
+- [x] Supplier transactions: PURCHASE, PAYMENT, ADJUSTMENT — with payment method
+      (CASH/ONLINE_TRANSFER), optional reference number and notes
+- [x] PURCHASE/PAYMENT amounts must be strictly positive; ADJUSTMENT can be signed
+      (positive or negative, non-zero) to correct balances either direction — verified
+      both validation paths reject invalid input correctly
+- [x] Balance calculation verified exact: totalBalance = opening + purchases + adjustments;
+      givenBalance = total payments; remainingBalance = totalBalance - givenBalance
+- [x] Delete blocked when supplier has transaction history (409
+      SUPPLIER_HAS_TRANSACTIONS) — deactivate instead
+- [x] New transactions blocked on inactive suppliers (409 INACTIVE_SUPPLIER)
+- [x] Audit log entry (SUPPLIER_TRANSACTION_CREATED) written on every transaction
+- [x] Read routes open to any authenticated user, write routes admin-only
+
+
 ## Notes / decisions log
 - v1 is desktop-only, single PC, SQLite. Multi-terminal (PostgreSQL) is a future upgrade, not part of v1.
 - No barcode in v1 — schema fields (`product_code`, `variant_sku`, `bill_no`) kept barcode-ready.
