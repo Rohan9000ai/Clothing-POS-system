@@ -130,7 +130,40 @@ since it returns a row, $executeRawUnsafe rejected it)
 - [x] SALE_CREATED and SALE_VOIDED audit entries now written on every sale/void — table
       was defined since Day 2 but unused until now; no dedicated read endpoint yet
       (natural fit for the Reports module later)
-      
+
+## Day 18 — Cashier POS UI: product search & cart ✅ VERIFIED WORKING
+- [x] Debounced product search by title
+- [x] Variant picker modal: size/color selection, live stock display, out-of-stock variants
+      disabled, quantity capped at available stock
+- [x] Cart: add/increment items, per-line discount, remove items, running totals
+      (items/subtotal/discount/net total)
+- [x] Salesman dropdown (populated from a new minimal GET /api/salesmen endpoint —
+      full CRUD still pending its own build day)
+- [x] Cashier auto-filled from logged-in session; customer defaults to Walk-in
+      (editable customer selection deferred — no Customers module yet)
+
+## Day 19 — Cashier POS UI: payment & save ✅ VERIFIED WORKING
+- [x] Payment entry: method selection (Cash/Easypaisa/JazzCash/Bank Transfer), amount,
+      reference number required and validated for non-cash methods
+- [x] Support for split/partial payments with live remaining-balance indicator and
+      preview of resulting payment status (Paid/Partial/Unpaid)
+- [x] Save sale wired to the real POST /api/sales endpoint
+- [x] Specific error handling verified: insufficient stock and payment-exceeds-total
+      show clear in-modal messages without clearing the cart, so the cashier can correct
+      and retry
+
+## Day 20 — Invoice page & thermal printing ✅ VERIFIED WORKING
+- [x] Invoice screen reachable immediately after a successful sale (navigates by sale id)
+- [x] Two receipt templates: full A4-style invoice and narrow 80mm thermal receipt, both
+      built from real shop settings (name, header, footer) via a new minimal
+      read-only GET /api/settings endpoint
+- [x] Printing via Electron's native print API over IPC (main process owns printer
+      access, renderer sends a self-contained HTML string) — verified end-to-end via
+      "Microsoft Print to PDF": both invoice and receipt layouts render correctly
+- [x] Save & print flow: checkout -> sale created -> redirect to invoice -> print
+      invoice or thermal receipt, confirmed working with a real test sale (MS-2026-00005)
+
+**Full Cashier POS flow is now complete end-to-end:** search → cart → payment → save → invoice → print.
 ## Notes / decisions log
 - v1 is desktop-only, single PC, SQLite. Multi-terminal (PostgreSQL) is a future upgrade, not part of v1.
 - No barcode in v1 — schema fields (`product_code`, `variant_sku`, `bill_no`) kept barcode-ready.
