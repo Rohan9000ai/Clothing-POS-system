@@ -35,16 +35,24 @@ export const createSupplierTransactionSchema = z
     notes: z.string().optional(),
     date: z.string().min(1, "Date is required."),
   })
-  .superRefine((data, ctx) => {
+    .superRefine((data, ctx) => {
     if (data.type === "ADJUSTMENT") {
       const result = signedMoneySchema.safeParse(data.amount);
       if (!result.success) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["amount"], message: result.error.issues[0].message });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["amount"],
+          message: result.error.issues[0]?.message ?? "Invalid amount.",
+        });
       }
     } else {
       const result = positiveMoneySchema.safeParse(data.amount);
       if (!result.success) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["amount"], message: result.error.issues[0].message });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["amount"],
+          message: result.error.issues[0]?.message ?? "Invalid amount.",
+        });
       }
     }
   });
