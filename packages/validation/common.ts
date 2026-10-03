@@ -9,6 +9,11 @@ export const positiveMoneySchema = z
   .number({ invalid_type_error: "Amount must be a number." })
   .positive("Amount must be greater than 0.");
 
+/** For adjustment-style entries where the value can correct a balance either up or down. */
+export const signedMoneySchema = z
+  .number({ invalid_type_error: "Amount must be a number." })
+  .refine((val) => val !== 0, "Amount cannot be zero.");
+
 export const wholeQuantitySchema = z
   .number({ invalid_type_error: "Quantity must be a number." })
   .int("Quantity must be a whole number.")

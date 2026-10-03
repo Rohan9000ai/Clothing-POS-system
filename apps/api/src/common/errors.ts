@@ -222,4 +222,16 @@ export const Errors = {
       "errors.business.saleAlreadyVoided",
       `Sale "${billNo}" has already been voided.`
     ),
+  supplierHasTransactions: (supplierName: string) =>
+    new BusinessError(
+      "SUPPLIER_HAS_TRANSACTIONS",
+      "errors.business.supplierHasTransactions",
+      `Supplier "${supplierName}" has transaction history and cannot be permanently deleted. Deactivate it instead.`
+    ),
+  inactiveSupplier: (supplierName: string) =>
+    new BusinessError(
+      "INACTIVE_SUPPLIER",
+      "errors.business.inactiveSupplier",
+      `Supplier "${supplierName}" is inactive. Activate it before recording new transactions.`
+    ),
 };
