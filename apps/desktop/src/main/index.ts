@@ -1,7 +1,9 @@
 import { app, BrowserWindow } from "electron";
 import { createMainWindow } from "./windows/createMainWindow";
+import { registerPrintHandlers } from "./printing/print";
 
 app.whenReady().then(() => {
+  registerPrintHandlers();
   createMainWindow();
 
   app.on("activate", () => {

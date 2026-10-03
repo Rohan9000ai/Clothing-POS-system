@@ -9,6 +9,7 @@ import { useToastStore } from "../../../store/toastStore";
 import { salesApi } from "../../../services/sales";
 import { HttpError } from "../../../services/http";
 import { zodFieldErrors } from "../../../utils/formErrors";
+import { useNavigate } from "react-router-dom";
 
 const METHOD_OPTIONS = [
   { value: "CASH", label: "Cash" },
@@ -98,6 +99,7 @@ export function PaymentModal({ onClose }: PaymentModalProps) {
     setAmountInput(remaining > 0 ? String(fromPaisa(remaining)) : "");
   }
 
+  const navigate = useNavigate();
   async function handleSave() {
     if (items.length === 0) return;
     setSaveError(null);
@@ -118,7 +120,7 @@ export function PaymentModal({ onClose }: PaymentModalProps) {
 
       push("success", `Sale ${sale.billNo} saved successfully.`);
       clearCart();
-      onClose();
+      navigate(`/invoice/${sale.id}`);
     } catch (err) {
       if (err instanceof HttpError && err.code === "INSUFFICIENT_STOCK") {
         setSaveError(`${err.message} Please adjust the quantity in the cart and try again.`);

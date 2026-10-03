@@ -15,6 +15,7 @@ import { CashierPosScreen } from "../../features/cashier-pos/CashierPosScreen";
 import { RequireAuth } from "./RequireAuth";
 import { RoleRedirect } from "./RoleRedirect";
 import { useAuthStore } from "../../store/authStore";
+import { InvoiceScreen } from "../../features/invoice/InvoiceScreen";
 
 export function AppRouter() {
   const restoreSession = useAuthStore((s) => s.restoreSession);
@@ -36,6 +37,15 @@ export function AppRouter() {
           element={
             <RequireAuth allowedRoles={["CASHIER", "ADMIN"]}>
               <CashierPosScreen />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/invoice/:saleId"
+          element={
+            <RequireAuth allowedRoles={["CASHIER", "ADMIN"]}>
+              <InvoiceScreen />
             </RequireAuth>
           }
         />
