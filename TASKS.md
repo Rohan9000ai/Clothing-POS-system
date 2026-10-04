@@ -181,6 +181,7 @@ since it returns a row, $executeRawUnsafe rejected it)
 - [x] Read routes open to any authenticated user, write routes admin-only
 
 
+
 ## Notes / decisions log
 - v1 is desktop-only, single PC, SQLite. Multi-terminal (PostgreSQL) is a future upgrade, not part of v1.
 - No barcode in v1 — schema fields (`product_code`, `variant_sku`, `bill_no`) kept barcode-ready.
