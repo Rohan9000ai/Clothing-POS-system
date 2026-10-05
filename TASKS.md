@@ -181,6 +181,19 @@ since it returns a row, $executeRawUnsafe rejected it)
 - [x] Read routes open to any authenticated user, write routes admin-only
 
 
+## Day 23 — Salesmen backend ✅ VERIFIED WORKING
+- [x] Salesman CRUD: create, list, get by id, update (name/phone/cnic/joinDate/salary), toggle status, delete
+- [x] CNIC format validation (12345-1234567-1) — verified: malformed CNIC rejected with 400
+- [x] Optional link to a user account (userId) — verified: linking to an existing CASHIER
+      user succeeds; linking a user already linked to another salesman is blocked (409
+      USER_ALREADY_LINKED_TO_SALESMAN); linking an ADMIN user is blocked (409
+      USER_MUST_BE_CASHIER_TO_LINK — only cashiers can be linked)
+- [x] "Today's sales" query per salesman (amount + count), aggregated from COMPLETED sales
+      dated today — verified exact match against a real test sale (Rs. 3,500, count 1)
+- [x] Delete blocked when salesman has sales or expense history (409
+      SALESMAN_HAS_RELATED_RECORDS) — deactivate instead
+- [x] Read routes open to any authenticated user (Cashier POS dropdown needs this since
+      Day 18); write routes admin-only
 
 ## Notes / decisions log
 - v1 is desktop-only, single PC, SQLite. Multi-terminal (PostgreSQL) is a future upgrade, not part of v1.
