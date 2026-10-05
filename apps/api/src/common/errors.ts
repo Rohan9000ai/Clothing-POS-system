@@ -234,4 +234,22 @@ export const Errors = {
       "errors.business.inactiveSupplier",
       `Supplier "${supplierName}" is inactive. Activate it before recording new transactions.`
     ),
+  salesmanHasRelatedRecords: (name: string) =>
+    new BusinessError(
+      "SALESMAN_HAS_RELATED_RECORDS",
+      "errors.business.salesmanHasRelatedRecords",
+      `Salesman "${name}" has sales or expense history and cannot be permanently deleted. Deactivate instead.`
+    ),
+  userAlreadyLinkedToSalesman: (username: string) =>
+    new BusinessError(
+      "USER_ALREADY_LINKED_TO_SALESMAN",
+      "errors.business.userAlreadyLinkedToSalesman",
+      `User "${username}" is already linked to another salesman.`
+    ),
+  userMustBeCashierToLink: (username: string) =>
+    new BusinessError(
+      "USER_MUST_BE_CASHIER_TO_LINK",
+      "errors.business.userMustBeCashierToLink",
+      `User "${username}" must have the Cashier role to be linked to a salesman.`
+    ),
 };
