@@ -26,7 +26,6 @@ async function generateUniqueBillNo(): Promise<string> {
     if (!existing) return billNo;
     attempt++;
   }
-  // Extremely unlikely fallback if 20 sequential attempts all collided.
   return `MS-${year}-${Date.now()}`;
 }
 
@@ -43,7 +42,6 @@ interface PreparedItem {
 }
 
 export async function createSale(input: CreateSaleInput, cashierId: string) {
-  // ---- Resolve customer (default: shared Walk-in record) ----
   const customer = input.customerId
     ? await getCustomerById(input.customerId)
     : await getOrCreateWalkInCustomer();
@@ -54,17 +52,12 @@ export async function createSale(input: CreateSaleInput, cashierId: string) {
     throw Errors.validation(`Customer "${customer.name}" is inactive.`, { field: "customerId" });
   }
 
-  // ---- Resolve salesman (optional) ----
   if (input.salesmanId) {
     const salesman = await prisma.salesman.findUnique({ where: { id: input.salesmanId } });
     if (!salesman) throw Errors.notFound("Salesman", input.salesmanId);
     if (salesman.status !== "ACTIVE") throw Errors.inactiveSalesman(salesman.name);
   }
 
-  // ---- Validate items and compute totals (read-only pass, for a fast,
-  //      clear error before opening a transaction). Stock is checked again
-  //      atomically inside the transaction below, to guard against a race
-  //      with another sale happening at the same moment. ----
   let subTotal = 0;
   let itemDiscountTotal = 0;
   const preparedItems: PreparedItem[] = [];
@@ -117,7 +110,6 @@ export async function createSale(input: CreateSaleInput, cashierId: string) {
     throw Errors.validation("Total discount cannot exceed the subtotal.", { field: "discountTotal" });
   }
 
-  // ---- Validate payments, derive payment status ----
   const totalPaid = input.payments.reduce((sum, p) => sum + p.amount, 0);
   if (totalPaid > netTotal) {
     throw Errors.paymentExceedsNetTotal(totalPaid, netTotal);
@@ -126,9 +118,6 @@ export async function createSale(input: CreateSaleInput, cashierId: string) {
 
   const billNo = await generateUniqueBillNo();
 
-  // ---- Everything below is ONE transaction: validate stock, save invoice,
-  //      save payments, decrement stock, write the audit trail. A sale is
-  //      never left half-saved — see docs/architecture/error-handling.md. ----
   return prisma.$transaction(async (tx) => {
     const sale = await tx.sale.create({
       data: {
@@ -162,9 +151,6 @@ export async function createSale(input: CreateSaleInput, cashierId: string) {
         },
       });
 
-      // Atomic, conditional decrement: only succeeds if enough stock is
-      // STILL available at this exact moment, closing the race window
-      // between the earlier read and this write.
       const decremented = await tx.productVariant.updateMany({
         where: { id: item.variantId, quantity: { gte: item.quantity } },
         data: { quantity: { decrement: item.quantity } },
@@ -222,7 +208,6 @@ export async function voidSale(id: string, input: VoidSaleInput, voidedById: str
 
   return prisma.$transaction(async (tx) => {
     for (const item of sale.items) {
-      // Restore the exact quantity this item removed at sale time.
       await tx.productVariant.update({
         where: { id: item.variantId },
         data: { quantity: { increment: item.quantity } },
@@ -267,6 +252,8 @@ interface ListSalesQuery extends PaginationQuery {
   status?: string;
   paymentStatus?: string;
   cashierId?: string;
+  salesmanId?: string;
+  paymentMethod?: string;
   dateFrom?: string;
   dateTo?: string;
 }
@@ -284,6 +271,8 @@ export async function listSales(query: ListSalesQuery) {
     ...(query.status ? { saleStatus: query.status } : {}),
     ...(query.paymentStatus ? { paymentStatus: query.paymentStatus } : {}),
     ...(query.cashierId ? { cashierId: query.cashierId } : {}),
+    ...(query.salesmanId ? { salesmanId: query.salesmanId } : {}),
+    ...(query.paymentMethod ? { payments: { some: { method: query.paymentMethod } } } : {}),
     ...(Object.keys(saleDateFilter).length > 0 ? { saleDate: saleDateFilter } : {}),
   };
 

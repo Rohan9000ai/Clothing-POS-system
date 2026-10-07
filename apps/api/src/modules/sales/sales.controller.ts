@@ -31,6 +31,8 @@ export async function getSales(req: Request, res: Response) {
     status: q.status,
     paymentStatus: q.paymentStatus,
     cashierId: q.cashierId,
+    salesmanId: q.salesmanId,
+    paymentMethod: q.paymentMethod,
     dateFrom: q.dateFrom,
     dateTo: q.dateTo,
   });
