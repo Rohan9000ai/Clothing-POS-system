@@ -195,6 +195,23 @@ since it returns a row, $executeRawUnsafe rejected it)
 - [x] Read routes open to any authenticated user (Cashier POS dropdown needs this since
       Day 18); write routes admin-only
 
+## Day 25 — Expenses backend ✅ VERIFIED WORKING
+- [x] Expense CRUD: create, list (paginated), get by id, update, void — voided rather than
+      hard-deleted, matching the sales pattern, since expenses are financial history
+- [x] Six expense types: ELECTRICITY, SALARIES, PAYOUTS, SUPPLIER_PAYMENT, TAXES, OTHER
+      Payment methods: CASH, ONLINE_TRANSFER
+- [x] Type OTHER requires a title (400 if missing) — verified; other types get an
+      automatic default title
+- [x] Optional link to a supplier or salesman — verified: linking an inactive supplier is
+      blocked (409 LINKED_RECORD_MUST_BE_ACTIVE)
+- [x] Void requires a reason, appends it to notes, and blocks voiding twice (409
+      EXPENSE_ALREADY_VOIDED)
+- [x] List filters: type, payment method, status, date range, title search — type and
+      status filters verified
+- [x] Audit log entries written on create (EXPENSE_CREATED) and void (EXPENSE_VOIDED)
+- [x] Admin-only end-to-end: cashiers get 403 even on read, since expenses are not
+      needed for billing
+      
 ## Notes / decisions log
 - v1 is desktop-only, single PC, SQLite. Multi-terminal (PostgreSQL) is a future upgrade, not part of v1.
 - No barcode in v1 — schema fields (`product_code`, `variant_sku`, `bill_no`) kept barcode-ready.
