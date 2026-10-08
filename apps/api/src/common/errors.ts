@@ -252,4 +252,16 @@ export const Errors = {
       "errors.business.userMustBeCashierToLink",
       `User "${username}" must have the Cashier role to be linked to a salesman.`
     ),
+  expenseAlreadyVoided: () =>
+    new BusinessError(
+      "EXPENSE_ALREADY_VOIDED",
+      "errors.business.expenseAlreadyVoided",
+      "This expense has already been voided."
+    ),
+  linkedRecordMustBeActive: (entity: string, name: string) =>
+    new BusinessError(
+      "LINKED_RECORD_MUST_BE_ACTIVE",
+      "errors.business.linkedRecordMustBeActive",
+      `${entity} "${name}" is inactive and cannot be linked to a new expense.`
+    ),
 };
