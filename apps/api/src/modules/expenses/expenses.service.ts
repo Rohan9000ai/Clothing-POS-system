@@ -38,28 +38,35 @@ export async function listExpenses(query: ListExpensesQuery) {
   if (query.dateFrom) expenseDateFilter.gte = new Date(query.dateFrom);
   if (query.dateTo) expenseDateFilter.lte = new Date(query.dateTo);
 
-  const where = {
+  // Filters shared by the list and the total. The status filter is applied
+  // separately, because the total must always exclude voided expenses.
+  const baseWhere = {
     ...(query.search ? { title: { contains: query.search } } : {}),
     ...(query.type ? { type: query.type } : {}),
     ...(query.paymentMethod ? { paymentMethod: query.paymentMethod } : {}),
-    ...(query.status ? { status: query.status } : {}),
     ...(Object.keys(expenseDateFilter).length > 0 ? { expenseDate: expenseDateFilter } : {}),
   };
+  const where = { ...baseWhere, ...(query.status ? { status: query.status } : {}) };
 
-  const [items, totalItems] = await Promise.all([
+  const [items, totalItems, activeAggregate] = await Promise.all([
     prisma.expense.findMany({
       where,
       include: EXPENSE_INCLUDE,
-      orderBy: { expenseDate: "desc" },
+      orderBy: [{ expenseDate: "desc" }, { createdAt: "desc" }],
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),
     prisma.expense.count({ where }),
+    prisma.expense.aggregate({
+      where: { ...baseWhere, status: "ACTIVE" },
+      _sum: { amount: true },
+    }),
   ]);
 
   return {
     items,
     meta: { page, pageSize, totalItems, totalPages: Math.max(Math.ceil(totalItems / pageSize), 1) },
+    summary: { activeTotal: activeAggregate._sum.amount ?? 0 },
   };
 }
 

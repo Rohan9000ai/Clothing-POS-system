@@ -2,7 +2,7 @@ import { formatCurrency, formatDateTime } from "@muzammil-pos/utils";
 import type { Settings } from "@muzammil-pos/types";
 import type { SaleDetail } from "../services/sales";
 
-function escapeHtml(value: string): string {
+export function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
