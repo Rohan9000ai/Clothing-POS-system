@@ -264,4 +264,17 @@ export const Errors = {
       "errors.business.linkedRecordMustBeActive",
       `${entity} "${name}" is inactive and cannot be linked to a new expense.`
     ),
+  supplierRequiredForPayment: () =>
+    new InputError(
+      "SUPPLIER_REQUIRED_FOR_PAYMENT",
+      "errors.input.supplierRequiredForPayment",
+      "Select the supplier this payment was made to.",
+      { field: "supplierId" }
+    ),
+  cannotEditVoidedExpense: () =>
+    new BusinessError(
+      "CANNOT_EDIT_VOIDED_EXPENSE",
+      "errors.business.cannotEditVoidedExpense",
+      "A deleted expense cannot be edited."
+    ),
 };

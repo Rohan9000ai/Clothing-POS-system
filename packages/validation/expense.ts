@@ -16,6 +16,10 @@ export const createExpenseSchema = z
   .refine((data) => data.type !== "OTHER" || (data.title && data.title.trim().length > 0), {
     message: "Title is required when expense type is Other.",
     path: ["title"],
+  })
+  .refine((data) => data.type !== "SUPPLIER_PAYMENT" || !!data.supplierId, {
+    message: "Select the supplier this payment was made to.",
+    path: ["supplierId"],
   });
 export type CreateExpenseInput = z.infer<typeof createExpenseSchema>;
 

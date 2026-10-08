@@ -38,7 +38,8 @@ export async function postExpense(req: Request, res: Response) {
 
 export async function patchExpense(req: Request, res: Response) {
   const id = requireParam(req, "id");
-  const expense = await updateExpense(id, req.body);
+  if (!req.user) throw Errors.sessionExpired();
+  const expense = await updateExpense(id, req.body, req.user.id);
   res.status(200).json({ expense });
 }
 

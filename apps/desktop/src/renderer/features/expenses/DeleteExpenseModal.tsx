@@ -66,6 +66,12 @@ export function DeleteExpenseModal({ expense, onClose, onDeleted }: DeleteExpens
           It will be removed from totals and reports. A record is kept for the audit trail and cannot be
           restored from the app.
         </p>
+        {expense.supplierTransactionId && (
+          <div className="rounded-control bg-warning-light px-3 py-2 text-xs text-warning">
+            This also removes the matching payment from {expense.supplier?.name ?? "the supplier"}'s account,
+            so what you owe them goes back up by {formatCurrency(expense.amount)}.
+          </div>
+        )}
         <div>
           <label className="text-xs font-medium text-gray-700">Reason</label>
           <textarea

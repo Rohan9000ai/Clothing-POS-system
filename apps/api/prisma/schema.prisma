@@ -168,6 +168,8 @@ model SupplierTransaction {
 
   supplier  Supplier @relation(fields: [supplierId], references: [id])
   createdBy User     @relation("SupplierTxnCreatedBy", fields: [createdById], references: [id])
+  // Set when this payment was created automatically from a "Paid to supplier" expense.
+  expense   Expense?
 
   @@index([supplierId])
   @@map("supplier_transactions")
@@ -233,23 +235,25 @@ model SalePayment {
 }
 
 model Expense {
-  id            String   @id @default(cuid())
-  expenseDate   DateTime @map("expense_date")
-  title         String
-  type          String   // "ELECTRICITY" | "SALARIES" | "PAYOUTS" | "SUPPLIER_PAYMENT" | "TAXES" | "OTHER"
-  amount        Int      // paisa
-  paymentMethod String   @map("payment_method") // "CASH" | "ONLINE_TRANSFER"
-  referenceNo   String?  @map("reference_no")
-  supplierId    String?  @map("supplier_id")
-  salesmanId    String?  @map("salesman_id")
-  notes         String?
-  createdById   String   @map("created_by")
-  status        String   @default("ACTIVE") // "ACTIVE" | "VOID"
-  createdAt     DateTime @default(now()) @map("created_at")
+  id                    String   @id @default(cuid())
+  expenseDate           DateTime @map("expense_date")
+  title                 String
+  type                  String   // "ELECTRICITY" | "SALARIES" | "PAYOUTS" | "SUPPLIER_PAYMENT" | "TAXES" | "OTHER"
+  amount                Int      // paisa
+  paymentMethod         String   @map("payment_method") // "CASH" | "ONLINE_TRANSFER"
+  referenceNo           String?  @map("reference_no")
+  supplierId            String?  @map("supplier_id")
+  salesmanId            String?  @map("salesman_id")
+  notes                 String?
+  createdById           String   @map("created_by")
+  status                String   @default("ACTIVE") // "ACTIVE" | "VOID"
+  createdAt             DateTime @default(now()) @map("created_at")
+  supplierTransactionId String?  @unique @map("supplier_transaction_id")
 
-  supplier  Supplier? @relation(fields: [supplierId], references: [id])
-  salesman  Salesman? @relation(fields: [salesmanId], references: [id])
-  createdBy User      @relation("ExpenseCreatedBy", fields: [createdById], references: [id])
+  supplier            Supplier?            @relation(fields: [supplierId], references: [id])
+  salesman            Salesman?            @relation(fields: [salesmanId], references: [id])
+  createdBy           User                 @relation("ExpenseCreatedBy", fields: [createdById], references: [id])
+  supplierTransaction SupplierTransaction? @relation(fields: [supplierTransactionId], references: [id], onDelete: SetNull)
 
   @@index([expenseDate])
   @@map("expenses")

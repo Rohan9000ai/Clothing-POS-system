@@ -173,6 +173,7 @@ export interface Expense {
   referenceNo: string | null;
   supplierId: string | null;
   salesmanId: string | null;
+  supplierTransactionId: string | null;
   notes: string | null;
   createdById: string;
   status: ExpenseStatus;

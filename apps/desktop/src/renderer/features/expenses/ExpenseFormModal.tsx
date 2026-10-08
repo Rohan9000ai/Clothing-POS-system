@@ -40,13 +40,13 @@ export function ExpenseFormModal({ expense, suppliers, salesmen, onClose, onSave
 
   const showSupplier = type === "SUPPLIER_PAYMENT";
   const showSalesman = type === "SALARIES" || type === "PAYOUTS";
+  /** True when this expense already has a matching payment on a supplier's account. */
+  const hasLinkedPayment = !!expense?.supplierTransactionId;
 
-  const supplierOptions = [
-    { value: "", label: "No supplier linked" },
-    ...suppliers
-      .filter((s) => s.status === "ACTIVE" || s.id === expense?.supplierId)
-      .map((s) => ({ value: s.id, label: s.status === "ACTIVE" ? s.name : `${s.name} (inactive)` })),
-  ];
+  const supplierOptions = suppliers
+    .filter((s) => s.status === "ACTIVE" || s.id === expense?.supplierId)
+    .map((s) => ({ value: s.id, label: s.status === "ACTIVE" ? s.name : `${s.name} (inactive)` }));
+
   const salesmanOptions = [
     { value: "", label: "No salesman linked" },
     ...salesmen
@@ -85,11 +85,14 @@ export function ExpenseFormModal({ expense, suppliers, salesmen, onClose, onSave
     const nextSupplierId = showSupplier ? supplierId : "";
     const nextSalesmanId = showSalesman ? salesmanId : "";
 
-    // "Other" must have a title. Checked here too because the update schema
-    // treats a missing title as "unchanged".
+    // "Other" must have a title, and a supplier payment must name its supplier.
+    // Checked here too because the update schema treats missing fields as "unchanged".
     const manualErrors: Record<string, string> = {};
     if (type === "OTHER" && !titleTrimmed) {
       manualErrors.title = "Title is required when expense type is Other.";
+    }
+    if (showSupplier && !nextSupplierId) {
+      manualErrors.supplierId = "Select the supplier this payment was made to.";
     }
 
     if (isEdit && expense) {
@@ -101,8 +104,8 @@ export function ExpenseFormModal({ expense, suppliers, salesmen, onClose, onSave
         paymentMethod,
         // An empty string clears a previously saved reference.
         referenceNo: paymentMethod === "ONLINE_TRANSFER" ? referenceTrimmed : "",
-        // Only send a link when it actually changed. The server rejects links to
-        // inactive records, which would otherwise block editing unrelated fields.
+        // Only send a link when it actually changed. The server rejects newly chosen
+        // links to inactive records, which would otherwise block editing unrelated fields.
         supplierId: nextSupplierId !== (expense.supplierId ?? "") ? nextSupplierId || null : undefined,
         salesmanId: nextSalesmanId !== (expense.salesmanId ?? "") ? nextSalesmanId || null : undefined,
         notes: notesTrimmed,
@@ -186,18 +189,28 @@ export function ExpenseFormModal({ expense, suppliers, salesmen, onClose, onSave
           disabled={isSubmitting}
         />
 
+        {hasLinkedPayment && !showSupplier && (
+          <div className="rounded-control bg-warning-light px-3 py-2 text-xs text-warning">
+            This expense currently has a matching payment on a supplier's account. Saving with a different
+            type removes that payment, so what you owe the supplier goes back up.
+          </div>
+        )}
+
         {showSupplier && (
           <div>
             <Select
-              label="Supplier (optional)"
+              label="Supplier"
               value={supplierId}
               onChange={(e) => setSupplierId(e.target.value)}
               options={supplierOptions}
+              placeholder="Select the supplier you paid"
               error={errors.supplierId}
               disabled={isSubmitting}
             />
             <p className="mt-1 text-xs text-gray-400">
-              Links this expense to the supplier for reference. It does not change the supplier's balance.
+              {hasLinkedPayment
+                ? "Changes here also update the matching payment on the supplier's account."
+                : "This also records a payment on the supplier's account, so what you owe them goes down."}
             </p>
           </div>
         )}
