@@ -182,7 +182,7 @@ export const Errors = {
     new BusinessError(
       "VARIANT_HAS_RELATED_RECORDS",
       "errors.business.variantHasRelatedRecords",
-      `Variant "${variantLabel}" has sales history and cannot be permanently deleted. Deactivate it instead.`
+      `Variant "${variantLabel}" has sales or purchase history and cannot be permanently deleted. Deactivate it instead.`
     ),
   adjustmentWouldGoNegative: (variantLabel: string, currentQuantity: number, quantityChange: number) =>
     new BusinessError(
@@ -276,5 +276,33 @@ export const Errors = {
       "CANNOT_EDIT_VOIDED_EXPENSE",
       "errors.business.cannotEditVoidedExpense",
       "A deleted expense cannot be edited."
+    ),
+  productInactiveForPurchase: (name: string) =>
+    new BusinessError(
+      "PRODUCT_INACTIVE_FOR_PURCHASE",
+      "errors.business.productInactiveForPurchase",
+      `Product "${name}" is inactive. Activate it in Inventory before adding stock to it.`
+    ),
+  variantInactiveForPurchase: (label: string) =>
+    new BusinessError(
+      "VARIANT_INACTIVE_FOR_PURCHASE",
+      "errors.business.variantInactiveForPurchase",
+      `"${label}" is inactive. Activate it in Inventory before adding stock to it.`
+    ),
+  purchaseAlreadyVoided: () =>
+    new BusinessError(
+      "PURCHASE_ALREADY_VOIDED",
+      "errors.business.purchaseAlreadyVoided",
+      "This bill has already been voided."
+    ),
+  purchaseStockAlreadyUsed: (shortfalls: { label: string; bought: number; inStock: number }[]) =>
+    new BusinessError(
+      "PURCHASE_STOCK_ALREADY_USED",
+      "errors.business.purchaseStockAlreadyUsed",
+      `This bill can't be voided because some of its stock was already sold or adjusted: ${shortfalls
+        .slice(0, 3)
+        .map((s) => `${s.label} (bought ${s.bought}, only ${s.inStock} left)`)
+        .join("; ")}${shortfalls.length > 3 ? "…" : ""}.`,
+      { items: shortfalls }
     ),
 };

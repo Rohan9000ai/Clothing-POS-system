@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Eye, PackagePlus, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { Badge, Button, Card, Modal, Table, ToggleSwitch, toneForStatus, type TableColumn } from "@muzammil-pos/ui";
 import type { Supplier } from "@muzammil-pos/types";
 import { formatCurrency } from "@muzammil-pos/utils";
 import { suppliersApi, type SupplierWithBalance } from "../../services/suppliers";
+import type { SupplierPurchaseDetail } from "../../services/supplierPurchases";
 import { useToastStore } from "../../store/toastStore";
 import { SupplierFormModal } from "./SupplierFormModal";
 import { SupplierDetailModal } from "./SupplierDetailModal";
+import { PurchaseFormModal } from "./PurchaseFormModal";
 
 export function SuppliersScreen() {
   const push = useToastStore((s) => s.push);
@@ -18,6 +20,7 @@ export function SuppliersScreen() {
 
   const [formModal, setFormModal] = useState<{ supplier?: Supplier } | null>(null);
   const [detailSupplier, setDetailSupplier] = useState<Supplier | null>(null);
+  const [purchaseSupplier, setPurchaseSupplier] = useState<Supplier | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Supplier | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -47,9 +50,7 @@ export function SuppliersScreen() {
   }, [suppliers, search]);
 
   function replaceSupplier(updated: Supplier) {
-    setSuppliers((prev) =>
-      prev.map((s) => (s.id === updated.id ? { ...s, ...updated } : s))
-    );
+    setSuppliers((prev) => prev.map((s) => (s.id === updated.id ? { ...s, ...updated } : s)));
   }
 
   function handleSaved(saved: Supplier, mode: "create" | "edit") {
@@ -61,6 +62,18 @@ export function SuppliersScreen() {
       push("success", `Supplier "${saved.name}" was updated.`);
     }
     setFormModal(null);
+  }
+
+  function handlePurchaseSaved(purchase: SupplierPurchaseDetail) {
+    const pieces = purchase.items.reduce((sum, i) => sum + i.quantity, 0);
+    push(
+      "success",
+      `Bill saved: ${pieces} ${pieces === 1 ? "piece" : "pieces"} added to stock and ${formatCurrency(
+        purchase.totalAmount
+      )} added to ${purchaseSupplier?.name ?? "the supplier"}'s balance.`
+    );
+    setPurchaseSupplier(null);
+    void loadSuppliers();
   }
 
   async function handleToggleStatus(supplier: Supplier) {
@@ -86,7 +99,7 @@ export function SuppliersScreen() {
       push("success", `Supplier "${deleteTarget.name}" was deleted.`);
       setDeleteTarget(null);
     } catch (err) {
-      // e.g. supplier has transaction history — server message explains.
+      // e.g. supplier has bills or transaction history: the server message explains.
       push("error", err instanceof Error ? err.message : "Could not delete supplier.");
       setDeleteTarget(null);
     } finally {
@@ -144,7 +157,15 @@ export function SuppliersScreen() {
             disabled={busyId === s.id}
             label={s.status === "ACTIVE" ? "Deactivate supplier" : "Activate supplier"}
           />
-          <IconButton label="View details" onClick={() => setDetailSupplier(s)}>
+          <IconButton
+            label={s.status === "ACTIVE" ? "Record stock bill" : "Activate the supplier to record a bill"}
+            highlight
+            disabled={s.status !== "ACTIVE"}
+            onClick={() => setPurchaseSupplier(s)}
+          >
+            <PackagePlus size={15} />
+          </IconButton>
+          <IconButton label="View details and bills" onClick={() => setDetailSupplier(s)}>
             <Eye size={15} />
           </IconButton>
           <IconButton label="Edit supplier" onClick={() => setFormModal({ supplier: s })}>
@@ -164,7 +185,7 @@ export function SuppliersScreen() {
         <div>
           <h2 className="text-title text-gray-900">Suppliers</h2>
           <p className="text-sm text-gray-400">
-            Supplier accounts and balances
+            Supplier accounts, stock bills and balances
             {!isLoading && !loadError && ` · ${suppliers.length} suppliers`}
           </p>
         </div>
@@ -215,7 +236,24 @@ export function SuppliersScreen() {
       )}
 
       {detailSupplier && (
-        <SupplierDetailModal supplier={detailSupplier} onClose={() => setDetailSupplier(null)} />
+        <SupplierDetailModal
+          supplier={detailSupplier}
+          onClose={() => setDetailSupplier(null)}
+          onRecordPurchase={() => {
+            setPurchaseSupplier(detailSupplier);
+            setDetailSupplier(null);
+          }}
+          onChanged={() => void loadSuppliers()}
+        />
+      )}
+
+      {purchaseSupplier && (
+        <PurchaseFormModal
+          key={purchaseSupplier.id}
+          supplier={purchaseSupplier}
+          onClose={() => setPurchaseSupplier(null)}
+          onSaved={handlePurchaseSaved}
+        />
       )}
 
       <Modal
@@ -238,7 +276,7 @@ export function SuppliersScreen() {
           Permanently delete <span className="font-semibold">{deleteTarget?.name}</span>? This cannot be undone.
         </p>
         <p className="mt-2 text-xs text-gray-400">
-          If this supplier has transaction history, deletion is blocked — deactivate it instead.
+          If this supplier has bills, payments or other history, deletion is blocked. Deactivate it instead.
         </p>
       </Modal>
     </div>
@@ -249,21 +287,30 @@ function IconButton({
   children,
   label,
   onClick,
+  disabled,
   danger,
+  highlight,
 }: {
   children: React.ReactNode;
   label: string;
   onClick: () => void;
+  disabled?: boolean;
   danger?: boolean;
+  highlight?: boolean;
 }) {
   return (
     <button
       title={label}
       aria-label={label}
+      disabled={disabled}
       onClick={onClick}
       className={
-        "rounded-control p-2 text-gray-400 transition-colors " +
-        (danger ? "hover:bg-danger-light hover:text-danger" : "hover:bg-gray-100 hover:text-gray-700")
+        "rounded-control p-2 transition-colors disabled:cursor-not-allowed disabled:opacity-40 " +
+        (danger
+          ? "text-gray-400 hover:bg-danger-light hover:text-danger"
+          : highlight
+            ? "text-brand hover:bg-brand-light"
+            : "text-gray-400 hover:bg-gray-100 hover:text-gray-700")
       }
     >
       {children}

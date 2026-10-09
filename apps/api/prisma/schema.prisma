@@ -36,6 +36,7 @@ model User {
   expensesCreated      Expense[]              @relation("ExpenseCreatedBy")
   inventoryMovements   InventoryMovement[]    @relation("InventoryMovementCreatedBy")
   auditLogs            AuditLog[]
+  supplierPurchasesCreated SupplierPurchase[] @relation("SupplierPurchaseCreatedBy")
 
   @@map("users")
 }
@@ -85,6 +86,7 @@ model Product {
   category  Category         @relation(fields: [categoryId], references: [id])
   variants  ProductVariant[]
   images    ProductImage[]
+  purchaseItems SupplierPurchaseItem[]
   saleItems SaleItem[]
 
   @@index([name])
@@ -105,6 +107,7 @@ model ProductVariant {
 
   product            Product              @relation(fields: [productId], references: [id])
   saleItems          SaleItem[]
+  purchaseItems      SupplierPurchaseItem[]
   inventoryMovements InventoryMovement[]
 
   @@unique([productId, size, color])
@@ -150,6 +153,7 @@ model Supplier {
 
   transactions SupplierTransaction[]
   expenses     Expense[]
+  purchases    SupplierPurchase[]
 
   @@map("suppliers")
 }
@@ -166,13 +170,58 @@ model SupplierTransaction {
   createdById   String   @map("created_by")
   createdAt     DateTime @default(now()) @map("created_at")
 
-  supplier  Supplier @relation(fields: [supplierId], references: [id])
-  createdBy User     @relation("SupplierTxnCreatedBy", fields: [createdById], references: [id])
-  // Set when this payment was created automatically from a "Paid to supplier" expense.
+  supplier  Supplier           @relation(fields: [supplierId], references: [id])
+  createdBy User               @relation("SupplierTxnCreatedBy", fields: [createdById], references: [id])
+  // Set when this entry was created automatically from a "Paid to supplier" expense.
   expense   Expense?
+  // Set when this entry was created automatically from a supplier purchase bill.
+  purchase  SupplierPurchase?
 
   @@index([supplierId])
   @@map("supplier_transactions")
+}
+
+model SupplierPurchase {
+  id                    String   @id @default(cuid())
+  supplierId            String   @map("supplier_id")
+  billNo                String?  @map("bill_no") // the supplier's own invoice number, optional
+  purchaseDate          DateTime @map("purchase_date")
+  totalAmount           Int      @map("total_amount") // paisa
+  notes                 String?
+  status                String   @default("ACTIVE") // "ACTIVE" | "VOID"
+  supplierTransactionId String?  @unique @map("supplier_transaction_id")
+  createdById           String   @map("created_by")
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  supplier            Supplier               @relation(fields: [supplierId], references: [id])
+  createdBy           User                   @relation("SupplierPurchaseCreatedBy", fields: [createdById], references: [id])
+  supplierTransaction SupplierTransaction?   @relation(fields: [supplierTransactionId], references: [id], onDelete: SetNull)
+  items               SupplierPurchaseItem[]
+
+  @@index([supplierId])
+  @@index([purchaseDate])
+  @@map("supplier_purchases")
+}
+
+
+model SupplierPurchaseItem {
+  id                  String @id @default(cuid())
+  purchaseId          String @map("purchase_id")
+  productId           String @map("product_id")
+  variantId           String @map("variant_id")
+  productNameSnapshot String @map("product_name_snapshot")
+  sizeSnapshot        String @map("size_snapshot")
+  colorSnapshot       String @map("color_snapshot")
+  quantity            Int
+  unitCost            Int    @map("unit_cost") // price per piece, paisa
+  lineTotal           Int    @map("line_total") // paisa
+
+  purchase SupplierPurchase @relation(fields: [purchaseId], references: [id])
+  product  Product          @relation(fields: [productId], references: [id])
+  variant  ProductVariant   @relation(fields: [variantId], references: [id])
+
+  @@index([purchaseId])
+  @@map("supplier_purchase_items")
 }
 
 model Sale {

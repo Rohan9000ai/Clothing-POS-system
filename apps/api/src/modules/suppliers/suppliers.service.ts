@@ -104,8 +104,12 @@ export async function deleteSupplier(id: string) {
   const supplier = await prisma.supplier.findUnique({ where: { id } });
   if (!supplier) throw Errors.notFound("Supplier", id);
 
-  const transactionCount = await prisma.supplierTransaction.count({ where: { supplierId: id } });
-  if (transactionCount > 0) {
+  const [transactionCount, purchaseCount, expenseCount] = await Promise.all([
+    prisma.supplierTransaction.count({ where: { supplierId: id } }),
+    prisma.supplierPurchase.count({ where: { supplierId: id } }),
+    prisma.expense.count({ where: { supplierId: id } }),
+  ]);
+  if (transactionCount + purchaseCount + expenseCount > 0) {
     throw Errors.supplierHasTransactions(supplier.name);
   }
 

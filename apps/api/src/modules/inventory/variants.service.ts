@@ -166,8 +166,11 @@ export async function deleteVariant(id: string) {
   const variant = await prisma.productVariant.findUnique({ where: { id } });
   if (!variant) throw Errors.notFound("Product variant", id);
 
-  const saleItemCount = await prisma.saleItem.count({ where: { variantId: id } });
-  if (saleItemCount > 0) {
+    const [saleItemCount, purchaseItemCount] = await Promise.all([
+    prisma.saleItem.count({ where: { variantId: id } }),
+    prisma.supplierPurchaseItem.count({ where: { variantId: id } }),
+  ]);
+  if (saleItemCount > 0 || purchaseItemCount > 0) {
     throw Errors.variantHasRelatedRecords(`${variant.size} / ${variant.color}`);
   }
 

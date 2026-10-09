@@ -7,6 +7,8 @@ import {
   updateSupplierSchema,
   toggleSupplierStatusSchema,
   createSupplierTransactionSchema,
+  createSupplierPurchaseSchema,
+  voidSupplierPurchaseSchema,
 } from "@muzammil-pos/validation";
 import {
   getSuppliers,
@@ -18,6 +20,11 @@ import {
   postSupplierTransaction,
   getSupplierTransactions,
 } from "./suppliers.controller";
+import {
+  getSupplierPurchases,
+  postSupplierPurchase,
+  postVoidSupplierPurchase,
+} from "./purchases.controller";
 
 export const suppliersRouter = Router();
 
@@ -47,4 +54,19 @@ suppliersRouter.post(
   requireRole("ADMIN"),
   validate(createSupplierTransactionSchema),
   asyncHandler(postSupplierTransaction)
+);
+
+// Stock purchase bills (pieces, sizes, colors, price per piece)
+suppliersRouter.get("/:id/purchases", asyncHandler(getSupplierPurchases));
+suppliersRouter.post(
+  "/:id/purchases",
+  requireRole("ADMIN"),
+  validate(createSupplierPurchaseSchema),
+  asyncHandler(postSupplierPurchase)
+);
+suppliersRouter.post(
+  "/:id/purchases/:purchaseId/void",
+  requireRole("ADMIN"),
+  validate(voidSupplierPurchaseSchema),
+  asyncHandler(postVoidSupplierPurchase)
 );
