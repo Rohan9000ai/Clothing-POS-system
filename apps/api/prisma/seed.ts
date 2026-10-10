@@ -5,6 +5,11 @@
  * IMPORTANT: change the default admin password immediately after first login
  * on the real shop PC. This seed password is only for initial setup.
  */
+import * as dotenv from "dotenv";
+import * as path from "path";
+
+// ts-node doesn't load .env by itself. Load apps/api/.env explicitly.
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 import { PrismaClient } from "@prisma/client";
 import argon2 from "argon2";
@@ -43,7 +48,7 @@ async function main() {
       },
     });
     console.log(
-      `Created default admin user -> username: "${DEFAULT_ADMIN_USERNAME}", password: "${DEFAULT_ADMIN_PASSWORD}" (change this after first login!)`
+      `Created default admin user -> username: "${DEFAULT_ADMIN_USERNAME}", password: "${DEFAULT_ADMIN_PASSWORD}" (change this after first login!)`,
     );
   } else {
     console.log("Admin user already exists, skipping.");
