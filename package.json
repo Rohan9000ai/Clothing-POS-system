@@ -23,6 +23,7 @@
     "db:migrate": "npm run db:migrate --workspace=apps/api",
     "db:seed": "npm run db:seed --workspace=apps/api",
     "db:backup": "node scripts/backup-database.js",
+    "db:restore": "node scripts/restore-backup.js",
     "lint": "eslint . --ext .ts,.tsx",
     "format": "prettier --write .",
     "test": "vitest run",

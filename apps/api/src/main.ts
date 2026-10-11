@@ -23,6 +23,8 @@ import { salesmenRouter } from "./modules/salesmen/salesmen.module";
 import { expensesRouter } from "./modules/expenses/expenses.module";
 import { reportsRouter } from "./modules/reports/reports.module";
 import { settingsRouter } from "./modules/settings/settings.module";
+import { backupsRouter } from "./modules/backups/backups.module";
+import { startBackupScheduler } from "./modules/backups/backups.service";
 
 const app = express();
 
@@ -44,6 +46,7 @@ app.use("/api/salesmen", salesmenRouter);
 app.use("/api/expenses", expensesRouter);
 app.use("/api/reports", reportsRouter);
 app.use("/api/settings", settingsRouter);
+app.use("/api/backups", backupsRouter);
 
 // ---- 404 for unknown routes ----
 app.use((req, res) => {
@@ -75,6 +78,8 @@ async function bootstrap() {
       env: env.appEnv,
     });
   });
+
+  startBackupScheduler();
 
   const shutdown = async (signal: string) => {
     logger.info(`Received ${signal}, shutting down gracefully...`);

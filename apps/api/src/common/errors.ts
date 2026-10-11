@@ -305,4 +305,16 @@ export const Errors = {
         .join("; ")}${shortfalls.length > 3 ? "…" : ""}.`,
       { items: shortfalls }
     ),
+  backupFailed: (reason: string) =>
+    new SystemError(
+      "BACKUP_FAILED",
+      "errors.system.backupFailed",
+      `The backup could not be completed: ${reason}`
+    ),
+  backupInProgress: () =>
+    new BusinessError(
+      "BACKUP_IN_PROGRESS",
+      "errors.business.backupInProgress",
+      "A backup is already running. Please wait for it to finish."
+    ),
 };
