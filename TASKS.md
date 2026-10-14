@@ -212,6 +212,79 @@ since it returns a row, $executeRawUnsafe rejected it)
 - [x] Admin-only end-to-end: cashiers get 403 even on read, since expenses are not
       needed for billing
       
+## Days 4–5 — Desktop shell & shared packages ✅ VERIFIED WORKING
+- [x] Electron main/preload + React/Vite/Tailwind renderer, router, sidebar/topbar, live API status
+- [x] Shared packages: types, validation (Zod), utils (money in paisa, dates, ids), ui components
+
+## Day 8 — Auth UI ✅ VERIFIED WORKING
+- [x] Login screen, role redirect (ADMIN → dashboard, CASHIER → /pos), persisted session, logout
+- [x] Clear "could not reach the server" message instead of a misleading wrong-password error
+
+## Day 9 — Users UI ✅ VERIFIED WORKING (users created through it are in use)
+- [x] Table, add/edit modal, change password, toggle status, delete, search
+- [x] Cannot deactivate/delete your own account; server enforces the last-admin rule
+
+## Day 10 — Admin layout & dashboard skeleton ✅ VERIFIED WORKING
+- [x] Grouped sidebar, topbar, placeholder pages for every module
+- [x] Dashboard layout (KPI cards, 7-day chart, recent sales, low stock) with placeholder numbers
+
+## Days 13–15 — Inventory backend extras & UI ✅ VERIFIED WORKING
+- [x] Stock adjustments (audited, never below 0), movement history, low-stock query, cashier product list
+- [x] Inventory list: search, category/status filters, pagination, low/out-of-stock badges, delete, toggle
+- [x] 3-step add/edit wizard (details → sizes & stock → images) with image upload
+
+## Day 22 — Suppliers UI ✅ VERIFIED WORKING (list, balances, add confirmed)
+- [x] Directory with opening / total / given / remaining balance, add/edit, delete, toggle
+- [ ] Detail view (balances + history) — built, not yet reported as tested
+
+## Day 24 — Salesmen UI 🟡 BUILT
+- [x] Roster with today's sales, add/edit, user-account link, toggle, delete
+
+## Admin Sales UI 🟡 BUILT
+- [x] Filters: date range, cashier, salesman, payment method, status, bill number; pagination
+- [x] View invoice, print, void with reason (restores stock, audited)
+
+## Day 26 — Expenses UI 🟡 BUILT
+- [x] Add/edit (title required only for "Other"), Day/Week/Month/Custom filters, delete = void with reason
+- [x] Export PDF via a native save dialog (needs a full Electron restart to load)
+
+## Expense → supplier payment sync ✅ VERIFIED (confirmed by owner)
+- [x] A "Paid to supplier" expense creates/updates/removes the matching supplier PAYMENT in one transaction
+- [x] Supplier is required for that type; a deleted expense cannot be edited
+
+## Supplier stock bills ("maal") 🟡 BUILT
+- [x] Per-supplier bill: product, size, color, pieces, price per piece, auto totals
+- [x] Saving raises stock (creates new sizes/colors, case-insensitive match) and the supplier's balance
+- [x] Void reverses both, and is blocked if those pieces were already sold
+- [ ] PowerShell test block not yet reported
+
+## Backups & data safety ✅ VERIFIED 14 Oct 2026
+- [x] Consistent copy via VACUUM INTO, integrity-checked, includes product pictures; last 7 kept
+- [x] Automatic backup 30 s after the API starts and when the newest is 24 h old, rechecked hourly
+- [x] Second copy to Google Drive through rclone (own OAuth client, published so the login doesn't expire);
+      failed uploads retry hourly and show in Settings
+- [x] Settings panel with "Back up now"; warning banner if backups stop or have no second copy
+- [x] Restore: `npm run db:restore -- <name>` (API must be stopped; saves current data first)
+- [x] Verified: integrity ok, 11-table row counts match live, cloud check 0 differences (manifest excluded),
+      cloud copy restored to a temp folder and passed, full restore drill passed
+
+## Environment notes (Windows ↔ Linux)
+- Live database file is `apps/database/muzammil_store.db` (Prisma resolves a relative path from the `prisma/` folder)
+- Only ONE env file: `apps/api/.env` (a second `prisma/.env` causes a conflict error)
+- Never in Git: database, product pictures, `.env`, `~/.config/rclone/rclone.conf`
+- Keep offline: `apps/api/.env`, backup Gmail details, Google Client ID/secret
+- Google Client secret and token were pasted into a chat; owner chose not to rotate. Rotate if that transcript is shared.
+
+## Still to build
+- [ ] Dashboard with real numbers (today's sales/bills/expenses, stock, 7-day chart, recent sales, low stock)
+- [ ] Settings screen: receipt header/footer with live preview, low-stock threshold (fixed at 5 in the UI today), language
+- [ ] Reports: receivables, payables, sales, stock, profit/loss, PDF export
+- [ ] Urdu/English with RTL layout
+- [ ] Customers beyond Walk-in; manual supplier adjustments screen
+- [ ] Packaging for the shop PC: Electron starts the API itself (today it needs two terminals), installer, auto-start
+- [ ] Silent thermal printing using THERMAL_PRINTER_NAME
+- [ ] Untrack `apps/database` from Git and keep the repository private
+
 ## Notes / decisions log
 - v1 is desktop-only, single PC, SQLite. Multi-terminal (PostgreSQL) is a future upgrade, not part of v1.
 - No barcode in v1 — schema fields (`product_code`, `variant_sku`, `bill_no`) kept barcode-ready.
