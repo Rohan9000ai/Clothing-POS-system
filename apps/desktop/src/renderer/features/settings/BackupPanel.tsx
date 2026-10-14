@@ -95,7 +95,9 @@ export function BackupPanel() {
     },
   ];
 
-  const healthy = !!status && !status.isStale && status.secondaryConfigured;
+  const newestBackup = status?.backups[0];
+  const newestSecondaryFailed = !!newestBackup && newestBackup.secondary.configured && !newestBackup.secondary.ok;
+  const healthy = !!status && !status.isStale && status.secondaryConfigured && !newestSecondaryFailed;
 
   return (
     <Card className="space-y-5">
@@ -158,18 +160,33 @@ export function BackupPanel() {
               </p>
             </div>
             <div className="rounded-control border border-gray-200 p-3">
-              <p className="font-medium text-gray-700">Second copy (USB drive or cloud folder)</p>
-              {status.secondaryDir ? (
-                <p className="mt-1 break-all font-mono text-[11px]">{status.secondaryDir}</p>
+              <p className="font-medium text-gray-700">Second copy (cloud or another drive)</p>
+              {status.secondaryConfigured ? (
+                <div className="mt-1 space-y-0.5">
+                  {status.rcloneRemote && (
+                    <p className="break-all font-mono text-[11px]">Cloud: {status.rcloneRemote}</p>
+                  )}
+                  {status.secondaryDir && (
+                    <p className="break-all font-mono text-[11px]">Folder: {status.secondaryDir}</p>
+                  )}
+                </div>
               ) : (
                 <p className="mt-1 text-warning">
                   Not set up. In <span className="font-mono">apps/api/.env</span> set{" "}
-                  <span className="font-mono">BACKUP_SECONDARY_DIR</span> to a USB drive or a synced folder (Google
-                  Drive, Dropbox), then restart the app.
+                  <span className="font-mono">BACKUP_RCLONE_REMOTE</span> (Google Drive via rclone) or{" "}
+                  <span className="font-mono">BACKUP_SECONDARY_DIR</span> (a synced or USB folder), then restart the
+                  app.
                 </p>
               )}
             </div>
           </div>
+
+          {newestSecondaryFailed && (
+            <div className="rounded-control bg-danger-light px-4 py-2 text-xs text-danger">
+              The newest backup is saved on this computer but could not be copied to the second location:{" "}
+              {newestBackup?.secondary.error ?? "unknown error"}. It is retried automatically every hour.
+            </div>
+          )}
 
           <Table
             columns={columns}

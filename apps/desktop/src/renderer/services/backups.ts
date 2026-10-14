@@ -14,6 +14,7 @@ export interface BackupInfo {
 export interface BackupStatus {
   backupDir: string;
   secondaryDir: string | null;
+  rcloneRemote: string | null;
   secondaryConfigured: boolean;
   databasePath: string;
   keepCount: number;

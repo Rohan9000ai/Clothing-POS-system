@@ -30,12 +30,15 @@ export function BackupWarning() {
   if (!status || dismissed) return null;
 
   // Missing or old backups are urgent. Having no second copy is a reminder.
+  const newest = status.backups[0];
   const message = status.isStale
     ? status.lastBackupAt
       ? "No recent backup. Automatic backups may not be working."
       : "No backup has been made yet."
     : !status.secondaryConfigured
-      ? "Your backups are only on this computer. Add a USB drive or cloud folder so they survive a reinstall."
+      ? "Your backups are only on this computer. Set up the free cloud copy so they survive a reinstall."
+      : newest && newest.secondary.configured && !newest.secondary.ok
+      ? "The latest backup could not be copied to the cloud. It will retry automatically."
       : null;
 
   if (!message) return null;

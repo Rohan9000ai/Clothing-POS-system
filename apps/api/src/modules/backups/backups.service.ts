@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import { execFile } from "child_process";
 import { PrismaClient } from "@prisma/client";
 import { prisma } from "../../database/prisma";
 import { env } from "../../common/env";
@@ -18,14 +19,24 @@ export interface BackupInfo {
   uploadBytes: number;
   /** "ok" when the copy passed SQLite's integrity check. */
   integrity: string;
-  /** Result of copying this backup to the second location. */
+  /** Result of copying this backup to the second location (folder and/or cloud). */
   secondary: { configured: boolean; ok: boolean; error?: string };
 }
 
 const BACKUP_NAME_PATTERN = /^muzammil_store_backup_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}$/;
 const DB_FILE_NAME = "muzammil_store.db";
 
+/** Accepts "remotename:folder/path", e.g. gdrive:muzammil-backups. */
+const RCLONE_REMOTE_PATTERN = /^[A-Za-z0-9_.-]+:[A-Za-z0-9_./ -]*$/;
+const RCLONE_TIMEOUT_MS = 10 * 60 * 1000;
+// Fail fast when the internet is down instead of hanging for minutes.
+const RCLONE_SAFETY_FLAGS = ["--retries", "2", "--low-level-retries", "3", "--contimeout", "20s", "--timeout", "2m"];
+
 let backupRunning = false;
+
+function hasSecondaryTarget(): boolean {
+  return !!(env.backupSecondaryRootDir || env.backupRcloneRemote);
+}
 
 function timestampName(date: Date = new Date()): string {
   const p = (n: number) => String(n).padStart(2, "0");
@@ -112,6 +123,98 @@ async function checkIntegrity(dbFile: string): Promise<string> {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Second copy: a folder (USB / synced folder) and/or a cloud remote via rclone
+// ---------------------------------------------------------------------------
+
+function runRclone(args: string[]): Promise<string> {
+  return new Promise((resolve, reject) => {
+    // execFile with an argument list (no shell), so nothing here can be injected.
+    execFile(
+      "rclone",
+      [...args, ...RCLONE_SAFETY_FLAGS],
+      { timeout: RCLONE_TIMEOUT_MS, windowsHide: true, maxBuffer: 10 * 1024 * 1024 },
+      (error, stdout, stderr) => {
+        if (error) {
+          if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+            reject(new Error("rclone is not installed or not on PATH."));
+            return;
+          }
+          const detail = String(stderr || stdout || error.message).trim().split("\n").slice(-3).join(" ");
+          reject(new Error(detail || error.message));
+          return;
+        }
+        resolve(String(stdout));
+      }
+    );
+  });
+}
+
+async function copyToRclone(sourceDir: string, name: string): Promise<void> {
+  const remote = env.backupRcloneRemote;
+  if (!RCLONE_REMOTE_PATTERN.test(remote)) {
+    throw new Error(`BACKUP_RCLONE_REMOTE "${remote}" is not valid. Use the form name:folder, e.g. gdrive:muzammil-backups.`);
+  }
+
+  await runRclone(["copy", sourceDir, `${remote}/${name}`]);
+  // Compare what is now in the cloud with the local backup. A copy that
+  // doesn't match is not a backup.
+  await runRclone(["check", sourceDir, `${remote}/${name}`, "--one-way"]);
+
+  const listing = await runRclone(["lsf", "--dirs-only", remote]);
+  const names = listing
+    .split(/\r?\n/)
+    .map((line) => line.trim().replace(/\/$/, ""))
+    .filter((n) => BACKUP_NAME_PATTERN.test(n))
+    .sort()
+    .reverse();
+
+  for (const old of names.slice(Math.max(env.backupKeepCount, 1))) {
+    await runRclone(["purge", `${remote}/${old}`, "--drive-use-trash=false"]);
+    logger.info("Removed old cloud backup", { name: old, remote });
+  }
+}
+
+function copyToFolder(sourceDir: string, name: string) {
+  fs.mkdirSync(env.backupSecondaryRootDir, { recursive: true });
+  fs.cpSync(sourceDir, path.join(env.backupSecondaryRootDir, name), { recursive: true });
+  pruneOldBackups(env.backupSecondaryRootDir);
+}
+
+/**
+ * Copies one finished backup to every configured second location. Never
+ * throws: if the USB/cloud is unavailable the local backup still stands, and
+ * the problem is reported instead of hidden.
+ */
+async function copyBackupToSecondary(sourceDir: string, name: string): Promise<{ ok: boolean; error?: string }> {
+  const problems: string[] = [];
+
+  if (env.backupSecondaryRootDir) {
+    try {
+      copyToFolder(sourceDir, name);
+    } catch (err) {
+      problems.push(`Folder ${env.backupSecondaryRootDir}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  if (env.backupRcloneRemote) {
+    try {
+      await copyToRclone(sourceDir, name);
+    } catch (err) {
+      problems.push(`Cloud ${env.backupRcloneRemote}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  if (problems.length > 0) {
+    const error = problems.join(" | ");
+    logger.warn("Could not copy the backup to the second location", { name, error });
+    return { ok: false, error };
+  }
+  return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+
 export function listBackups(): BackupInfo[] {
   return listBackupNames(env.backupRootDir).map((name) => readBackupInfo(env.backupRootDir, name));
 }
@@ -125,7 +228,8 @@ export function getBackupStatus() {
   return {
     backupDir: env.backupRootDir,
     secondaryDir: env.backupSecondaryRootDir || null,
-    secondaryConfigured: !!env.backupSecondaryRootDir,
+    rcloneRemote: env.backupRcloneRemote || null,
+    secondaryConfigured: hasSecondaryTarget(),
     databasePath: env.databaseFilePath,
     keepCount: Math.max(env.backupKeepCount, 1),
     intervalHours: env.backupAutoIntervalHours,
@@ -170,27 +274,16 @@ export async function createBackup(trigger: BackupTrigger, userId: string | null
       uploadFiles: uploads.files,
       uploadBytes: uploads.bytes,
       integrity,
-      secondary: { configured: !!env.backupSecondaryRootDir, ok: false },
+      secondary: { configured: hasSecondaryTarget(), ok: false },
     };
     const writeManifest = () =>
       fs.writeFileSync(path.join(targetDir, "manifest.json"), JSON.stringify(info, null, 2));
     writeManifest();
 
-    // Second copy (USB drive / cloud-synced folder). If it is unavailable the
-    // local backup still stands, and the problem is reported instead of hidden.
-    if (env.backupSecondaryRootDir) {
-      try {
-        fs.mkdirSync(env.backupSecondaryRootDir, { recursive: true });
-        fs.cpSync(targetDir, path.join(env.backupSecondaryRootDir, name), { recursive: true });
-        pruneOldBackups(env.backupSecondaryRootDir);
-        info.secondary.ok = true;
-      } catch (err) {
-        info.secondary.error = err instanceof Error ? err.message : String(err);
-        logger.warn("Could not copy the backup to the second location", {
-          location: env.backupSecondaryRootDir,
-          error: info.secondary.error,
-        });
-      }
+    if (hasSecondaryTarget()) {
+      const result = await copyBackupToSecondary(targetDir, name);
+      info.secondary.ok = result.ok;
+      if (result.error) info.secondary.error = result.error;
       writeManifest();
     }
 
@@ -231,6 +324,31 @@ export async function createBackup(trigger: BackupTrigger, userId: string | null
 }
 
 /**
+ * If the newest backup never reached the second location (internet down, USB
+ * unplugged), try again without making a new backup.
+ */
+async function retryFailedSecondaryCopy() {
+  if (backupRunning || !hasSecondaryTarget()) return;
+
+  const last = listBackups()[0];
+  if (!last || last.secondary.ok) return;
+
+  backupRunning = true;
+  try {
+    const dir = path.join(env.backupRootDir, last.name);
+    const result = await copyBackupToSecondary(dir, last.name);
+    const updated: BackupInfo = {
+      ...last,
+      secondary: { configured: true, ok: result.ok, ...(result.error ? { error: result.error } : {}) },
+    };
+    fs.writeFileSync(path.join(dir, "manifest.json"), JSON.stringify(updated, null, 2));
+    if (result.ok) logger.info("Second copy of the latest backup completed on retry", { name: last.name });
+  } finally {
+    backupRunning = false;
+  }
+}
+
+/**
  * Backs up shortly after the API starts when the newest backup is older than
  * the configured interval, then re-checks every hour. A shop that opens every
  * morning therefore gets a fresh backup each day without anyone remembering.
@@ -247,6 +365,8 @@ export function startBackupScheduler() {
       const ageHours = last ? (Date.now() - Date.parse(last.createdAt)) / 3_600_000 : Infinity;
       if (ageHours >= env.backupAutoIntervalHours) {
         await createBackup("AUTO", null);
+      } else {
+        await retryFailedSecondaryCopy();
       }
     } catch (err) {
       logger.error("Automatic backup failed", { error: err instanceof Error ? err.message : String(err) });

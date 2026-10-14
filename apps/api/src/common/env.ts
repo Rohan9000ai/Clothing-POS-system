@@ -43,6 +43,7 @@ const databaseUrl = required("DATABASE_URL");
 const uploadsDirRaw = optional("UPLOADS_DIR", "../../database/uploads");
 const backupDirRaw = optional("BACKUP_DIR", "../../database/backups");
 const backupSecondaryRaw = optional("BACKUP_SECONDARY_DIR", "");
+const backupRcloneRemoteRaw = optional("BACKUP_RCLONE_REMOTE", "").replace(/\/+$/, "");
 
 export const env = {
   appName: optional("APP_NAME", "Muzammil Store POS"),
@@ -67,7 +68,8 @@ export const env = {
   backupSecondaryRootDir: backupSecondaryRaw
     ? path.resolve(apiRootDir, backupSecondaryRaw)
     : "",
-
+  /** rclone destination such as "gdrive:muzammil-backups", or "" if not used. */
+  backupRcloneRemote: backupRcloneRemoteRaw,
   thermalPrinterName: optional("THERMAL_PRINTER_NAME", ""),
   receiptPaperWidthMm: Number(optional("RECEIPT_PAPER_WIDTH_MM", "80")),
 
