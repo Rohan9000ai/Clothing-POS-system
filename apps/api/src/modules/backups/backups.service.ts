@@ -46,6 +46,18 @@ function timestampName(date: Date = new Date()): string {
   );
 }
 
+/** A backup name that doesn't exist yet. Two backups in the same second must never share a folder. */
+function uniqueBackupName(): string {
+  let when = new Date();
+  for (let i = 0; i < 3600; i++) {
+    const candidate = timestampName(when);
+    if (!fs.existsSync(path.join(env.backupRootDir, candidate))) return candidate;
+    when = new Date(when.getTime() + 1000);
+  }
+  return timestampName(when);
+}
+
+
 function folderStats(dir: string): { files: number; bytes: number } {
   let files = 0;
   let bytes = 0;
@@ -244,11 +256,13 @@ export async function createBackup(trigger: BackupTrigger, userId: string | null
   if (backupRunning) throw Errors.backupInProgress();
   backupRunning = true;
 
-  const name = timestampName();
+  const name = uniqueBackupName();
   const targetDir = path.join(env.backupRootDir, name);
+  let createdDir = false;
 
   try {
     fs.mkdirSync(targetDir, { recursive: true });
+    createdDir = true;
 
     // VACUUM INTO writes a consistent, complete copy even while the shop is
     // selling, which a plain file copy cannot guarantee (the -wal file).
@@ -313,8 +327,9 @@ export async function createBackup(trigger: BackupTrigger, userId: string | null
 
     return info;
   } catch (err) {
-    // Never leave a half-written folder behind that could be mistaken for a good backup.
-    fs.rmSync(targetDir, { recursive: true, force: true });
+    // Remove a half-written folder so it can't be mistaken for a good backup,
+    // but only one THIS run created. Never touch an earlier, good backup.
+    if (createdDir) fs.rmSync(targetDir, { recursive: true, force: true });
     const reason = err instanceof Error ? err.message : String(err);
     logger.error("Backup failed", { name, error: reason });
     throw Errors.backupFailed(reason);
