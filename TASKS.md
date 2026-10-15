@@ -268,6 +268,19 @@ since it returns a row, $executeRawUnsafe rejected it)
 - [x] Verified: integrity ok, 11-table row counts match live, cloud check 0 differences (manifest excluded),
       cloud copy restored to a temp folder and passed, full restore drill passed
 
+
+## Day 27 — Reports backend: sales ✅ VERIFIED 15 Oct 2026
+- [x] GET /api/reports/sales (admin only): period = day | week (Mon–Sun) | month | custom, optional date
+- [x] Totals: bills, items sold, gross, discount, net, average bill, collected, outstanding, paid/partial/unpaid
+- [x] Highest sales day, day-by-day series with no gaps, comparison with the previous period
+- [x] Sales by payment method (all four always listed), by cashier, by salesman
+- [x] Top products by quantity and by revenue (topN, default 10)
+- [x] Voided bills excluded from every figure and reported separately
+- [x] Day boundaries use the local clock of the PC running the API
+- [x] Verified: totals, payments, products, cashiers match direct SQL; salesmen and daily rows add up to net sales
+- [x] Verified: validation errors (missing/reversed/impossible dates, >731 days, bad period); cashier gets 403
+- [ ] Known gap for Receivables: no way yet to record a later payment on a partial/unpaid bill 
+
 ## Environment notes (Windows ↔ Linux)
 - Live database file is `apps/database/muzammil_store.db` (Prisma resolves a relative path from the `prisma/` folder)
 - Only ONE env file: `apps/api/.env` (a second `prisma/.env` causes a conflict error)
