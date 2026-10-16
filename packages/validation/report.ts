@@ -2,7 +2,12 @@ import { z } from "zod";
 
 const ymdSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use the format YYYY-MM-DD.");
 
-export const salesReportQuerySchema = z
+/**
+ * One query shape for every report (sales, expenses, financial).
+ * topN means: top products (sales report), largest expenses (expense report),
+ * products missing a cost price (financial report).
+ */
+export const reportQuerySchema = z
   .object({
     period: z.enum(["day", "week", "month", "custom"]).default("day"),
     /** Any day inside the wanted day/week/month. Defaults to today. */
@@ -10,7 +15,6 @@ export const salesReportQuerySchema = z
     /** Only for period=custom. */
     dateFrom: ymdSchema.optional(),
     dateTo: ymdSchema.optional(),
-    /** How many products to list in the top-selling tables. */
     topN: z.coerce.number().int().min(1).max(50).default(10),
   })
   .superRefine((data, ctx) => {
@@ -31,4 +35,11 @@ export const salesReportQuerySchema = z
       }
     }
   });
-export type SalesReportQuery = z.infer<typeof salesReportQuerySchema>;
+export type ReportQuery = z.infer<typeof reportQuerySchema>;
+
+export const salesReportQuerySchema = reportQuerySchema;
+export const expenseReportQuerySchema = reportQuerySchema;
+export const financialReportQuerySchema = reportQuerySchema;
+export type SalesReportQuery = ReportQuery;
+export type ExpenseReportQuery = ReportQuery;
+export type FinancialReportQuery = ReportQuery;

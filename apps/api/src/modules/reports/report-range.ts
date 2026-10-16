@@ -132,3 +132,31 @@ export function previousRange(period: ReportPeriod, range: ReportRange): ReportR
   const previousEnd = addDays(range.start, -1);
   return buildRange(addDays(previousEnd, -(range.days - 1)), previousEnd);
 }
+
+/**
+ * UTC bounds for the same calendar days. Expense dates are stored as the chosen
+ * calendar day at UTC midnight, so they must be filtered in UTC.
+ */
+export function utcBounds(range: ReportRange): { start: Date; endExclusive: Date } {
+  const start = new Date(`${range.from}T00:00:00.000Z`);
+  const endExclusive = new Date(`${range.to}T00:00:00.000Z`);
+  endExclusive.setUTCDate(endExclusive.getUTCDate() + 1);
+  return { start, endExclusive };
+}
+
+/** The calendar date (YYYY-MM-DD) of a stored expense date. */
+export function utcYmd(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+/** Every calendar day in the range, as YYYY-MM-DD, so charts have no gaps. */
+export function listDays(range: ReportRange): string[] {
+  const days: string[] = [];
+  const cursor = new Date(`${range.from}T00:00:00.000Z`);
+  const last = new Date(`${range.to}T00:00:00.000Z`);
+  while (cursor.getTime() <= last.getTime()) {
+    days.push(cursor.toISOString().slice(0, 10));
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return days;
+}
