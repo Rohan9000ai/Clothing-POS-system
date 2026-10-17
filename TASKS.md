@@ -281,6 +281,18 @@ since it returns a row, $executeRawUnsafe rejected it)
 - [x] Verified: validation errors (missing/reversed/impossible dates, >731 days, bad period); cashier gets 403
 - [ ] Known gap for Receivables: no way yet to record a later payment on a partial/unpaid bill 
 
+## Day 28 — Reports backend: expenses & financial ✅ VERIFIED 17 Oct 2026
+- [x] GET /api/reports/expenses and /api/reports/financial (admin only), same period system as sales
+- [x] Expense totals by type, payment method and day; largest expenses; comparison with the previous period
+- [x] Supplier payments are shown but NOT counted in profit (their cost reaches profit as cost of goods when sold)
+- [x] Profit/loss: net sales - cost of goods - running costs (operating + taxes & other); margins; cash view
+- [x] Cost of goods: product cost price -> latest bill for that size/colour -> latest bill for the product -> unknown;
+      report says "estimate" until every sold piece has a cost; products missing a cost are listed
+- [x] Verified: totals/type/method match direct SQL; 7 arithmetic identities true; cost fallback works
+      (voided bills ignored; an older real bill still supplies cost, which is why coverage stayed 89.5% after the
+      test bill was voided); empty period gives zeros and null margins; cashier gets 403
+- [ ] Known limitation: cost is today's cost, not the cost when the piece was sold
+
 ## Environment notes (Windows ↔ Linux)
 - Live database file is `apps/database/muzammil_store.db` (Prisma resolves a relative path from the `prisma/` folder)
 - Only ONE env file: `apps/api/.env` (a second `prisma/.env` causes a conflict error)
