@@ -88,3 +88,9 @@ Thumbs.db
 *.local
 apps/desktop/dist-electron/
 database/uploads/*
+# SQLite databases and their companion files, anywhere in the repo
+**/*.db
+**/*.db-shm
+**/*.db-wal
+**/*.db-journal
+apps/database/
