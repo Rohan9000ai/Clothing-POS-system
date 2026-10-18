@@ -3,15 +3,24 @@ import clsx from "clsx";
 import { Card } from "@muzammil-pos/ui";
 import { settingsApi } from "../../services/settings";
 import { ExpenseReportTab } from "./ExpenseReportTab";
+import { FinancialReportTab } from "./FinancialReportTab";
+import { PayablesReportTab } from "./PayablesReportTab";
+import { ReceivablesReportTab } from "./ReceivablesReportTab";
 import { SalesReportTab } from "./SalesReportTab";
+import { StockReportTab } from "./StockReportTab";
 import { PeriodBar } from "./components/PeriodBar";
 import { initialPeriod, resolvePeriod, type PeriodState } from "./reportPeriod";
 
-type ReportTab = "sales" | "expenses";
+type ReportTab = "sales" | "expenses" | "profit" | "stock" | "receivables" | "payables";
 
-const TABS: { value: ReportTab; label: string }[] = [
-  { value: "sales", label: "Sales" },
-  { value: "expenses", label: "Expenses" },
+/** `usesPeriod: false` reports show the position right now, so they have no date range. */
+const TABS: { value: ReportTab; label: string; usesPeriod: boolean }[] = [
+  { value: "sales", label: "Sales", usesPeriod: true },
+  { value: "expenses", label: "Expenses", usesPeriod: true },
+  { value: "profit", label: "Profit & loss", usesPeriod: true },
+  { value: "stock", label: "Stock", usesPeriod: false },
+  { value: "receivables", label: "Receivables", usesPeriod: false },
+  { value: "payables", label: "Payables", usesPeriod: false },
 ];
 
 export function ReportsScreen() {
@@ -29,13 +38,15 @@ export function ReportsScreen() {
   }, []);
 
   const resolved = useMemo(() => resolvePeriod(period), [period]);
+  const activeTab = TABS.find((item) => item.value === tab) ?? TABS[0];
+  const usesPeriod = activeTab?.usesPeriod ?? true;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-title text-gray-900">Reports</h2>
-          <p className="text-sm text-gray-400">Sales and expense reports with charts and PDF export</p>
+          <p className="text-sm text-gray-400">Sales, expenses, profit, stock and balances, with PDF export</p>
         </div>
         <div className="inline-flex rounded-control border border-gray-200 bg-gray-50 p-0.5">
           {TABS.map((item) => (
@@ -53,14 +64,22 @@ export function ReportsScreen() {
         </div>
       </div>
 
-      <PeriodBar state={period} resolved={resolved} onChange={setPeriod} />
+      {usesPeriod && <PeriodBar state={period} resolved={resolved} onChange={setPeriod} />}
 
-      {!resolved.ready ? (
+      {usesPeriod && !resolved.ready ? (
         <Card className="text-center text-sm text-gray-500">{resolved.problem}</Card>
       ) : tab === "sales" ? (
         <SalesReportTab query={resolved.query} shopName={shopName} />
-      ) : (
+      ) : tab === "expenses" ? (
         <ExpenseReportTab query={resolved.query} shopName={shopName} />
+      ) : tab === "profit" ? (
+        <FinancialReportTab query={resolved.query} shopName={shopName} />
+      ) : tab === "stock" ? (
+        <StockReportTab shopName={shopName} />
+      ) : tab === "receivables" ? (
+        <ReceivablesReportTab shopName={shopName} />
+      ) : (
+        <PayablesReportTab shopName={shopName} />
       )}
     </div>
   );

@@ -43,3 +43,11 @@ export const financialReportQuerySchema = reportQuerySchema;
 export type SalesReportQuery = ReportQuery;
 export type ExpenseReportQuery = ReportQuery;
 export type FinancialReportQuery = ReportQuery;
+export const stockReportQuerySchema = z.object({
+  categoryId: z.string().min(1).optional(),
+  topN: z.coerce.number().int().min(1).max(50).default(10),
+});
+export type StockReportQuery = z.infer<typeof stockReportQuerySchema>;
+
+/** Receivables and payables are "as of now" snapshots and take no filters. */
+export const snapshotReportQuerySchema = z.object({});

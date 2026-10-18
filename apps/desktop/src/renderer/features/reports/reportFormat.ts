@@ -64,3 +64,8 @@ export const SALE_METHOD_LABELS: Record<SalePaymentMethod, string> = {
   JAZZCASH: "JazzCash",
   BANK_TRANSFER: "Bank transfer",
 };
+/** How much `current` changed compared with `previous`, in percent. null when `previous` is 0. */
+export function percentChange(current: number, previous: number): number | null {
+  if (previous === 0) return null;
+  return Math.round(((current - previous) / Math.abs(previous)) * 1000) / 10;
+}

@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ReportQueryParams } from "../../services/reports";
 
 /**
  * Loads one report whenever the query changes. An older, slower request can
  * never overwrite the result of a newer one.
  */
-export function useReportData<T>(load: (query: ReportQueryParams) => Promise<T>, query: ReportQueryParams | null) {
+export function useReportData<T, Q>(load: (query: Q) => Promise<T>, query: Q | null) {
   const [data, setData] = useState<T | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,13 +25,13 @@ export function useReportData<T>(load: (query: ReportQueryParams) => Promise<T>,
     setIsLoading(true);
     setError(null);
 
-    load(JSON.parse(queryKey) as ReportQueryParams)
+    load(JSON.parse(queryKey) as Q)
       .then((result) => {
         if (requestId === latestRequest.current) setData(result);
       })
       .catch((err: unknown) => {
         if (requestId !== latestRequest.current) return;
-        // Don't leave the previous period's numbers on screen under a new heading.
+        // Don't leave the previous numbers on screen under a new heading.
         setData(null);
         setError(err instanceof Error ? err.message : "Could not load the report.");
       })

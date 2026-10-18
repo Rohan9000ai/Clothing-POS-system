@@ -7,6 +7,8 @@ interface StatCardProps {
   label: string;
   value: string;
   hint?: string;
+  /** Colours the main number, e.g. red for a loss. */
+  valueTone?: "good" | "bad";
   /** Percent change against the previous period. Leave undefined to hide the comparison. */
   change?: number | null;
   /** True for sales (an increase is good), false for expenses (an increase is bad). */
@@ -14,7 +16,15 @@ interface StatCardProps {
   compareLabel?: string;
 }
 
-export function StatCard({ label, value, hint, change, increaseIsGood = true, compareLabel = "" }: StatCardProps) {
+export function StatCard({
+  label,
+  value,
+  hint,
+  valueTone,
+  change,
+  increaseIsGood = true,
+  compareLabel = "",
+}: StatCardProps) {
   const description = change === undefined ? null : describeChange(change, increaseIsGood, compareLabel);
   const Icon =
     description?.direction === "up" ? TrendingUp : description?.direction === "down" ? TrendingDown : Minus;
@@ -22,7 +32,14 @@ export function StatCard({ label, value, hint, change, increaseIsGood = true, co
   return (
     <Card>
       <p className="text-sm text-gray-500">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-gray-900">{value}</p>
+      <p
+        className={clsx(
+          "mt-2 text-2xl font-semibold",
+          valueTone === "bad" ? "text-danger" : valueTone === "good" ? "text-success" : "text-gray-900"
+        )}
+      >
+        {value}
+      </p>
       {hint && <p className="mt-1 text-xs text-gray-400">{hint}</p>}
       {description && (
         <p
