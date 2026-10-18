@@ -293,6 +293,25 @@ since it returns a row, $executeRawUnsafe rejected it)
       test bill was voided); empty period gives zeros and null margins; cashier gets 403
 - [ ] Known limitation: cost is today's cost, not the cost when the piece was sold
 
+## Day 29 — Reports UI: sales & expenses 🟡 BUILT (awaiting owner's check)
+- [x] Reports screen with tabs; date bar: Day/Week/Month (arrows step through periods) and Custom range (max 731 days)
+- [x] Sales tab: KPI cards with change vs previous period, 31-day / weekly / monthly bar chart (grain follows the range),
+      payment methods, cashier, salesman, top products by pieces/revenue
+- [x] Expenses tab: totals, by type, by payment method, daily chart, largest expenses; expense rises shown in red
+- [x] PDF export for both through the native save dialog; charts are hand-drawn SVG, same code for screen and PDF
+
+## Day 30 — Reports UI: combined, stock, receivables, payables 🟡 BUILT (backend checks pending)
+- [x] New admin-only endpoints: GET /api/reports/stock, /receivables, /payables
+- [x] Profit & loss tab (combined sales + expenses): statement, margins, sales-vs-costs chart, signed net-profit chart,
+      cash view, estimate warning with the products missing a cost
+- [x] Stock tab: pieces, value at cost / selling price, potential profit, low & out of stock, inactive stock,
+      value by category, searchable product table, cost gaps; category filter; Refresh
+- [x] Receivables tab: total owed, aging buckets, by customer, open bills (oldest first) with link to the invoice
+- [x] Payables tab: owed vs advances, who you owe most, balances by supplier with last payment/bill dates
+- [x] PDF export on all four
+- [ ] Known gaps: cannot record a customer's later payment against a bill (receivables is read-only);
+      cost used is today's cost, not the cost on the day of the sale; Urdu not started
+      
 ## Environment notes (Windows ↔ Linux)
 - Live database file is `apps/database/muzammil_store.db` (Prisma resolves a relative path from the `prisma/` folder)
 - Only ONE env file: `apps/api/.env` (a second `prisma/.env` causes a conflict error)
