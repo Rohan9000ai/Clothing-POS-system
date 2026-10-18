@@ -311,7 +311,12 @@ since it returns a row, $executeRawUnsafe rejected it)
 - [x] PDF export on all four
 - [ ] Known gaps: cannot record a customer's later payment against a bill (receivables is read-only);
       cost used is today's cost, not the cost on the day of the sale; Urdu not started
-      
+## Day 30 — Reports UI: combined, stock, receivables, payables 🟡 BACKEND ✅ VERIFIED 18 Oct 2026, SCREENS PENDING
+- [x] Backend verified: stock totals/value/low stock match SQL and the old low-stock endpoint; receivables match SQL and the
+      sales report; payables match the Suppliers screen and SQL; category filter, validation and 403 all behave
+- [ ] Screens and PDFs not yet confirmed by the owner (all four tabs)
+- [ ] Housekeeping: delete the "RESTORE TEST" supplier; replace the test cost prices with real ones
+
 ## Environment notes (Windows ↔ Linux)
 - Live database file is `apps/database/muzammil_store.db` (Prisma resolves a relative path from the `prisma/` folder)
 - Only ONE env file: `apps/api/.env` (a second `prisma/.env` causes a conflict error)
