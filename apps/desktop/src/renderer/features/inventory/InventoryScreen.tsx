@@ -16,11 +16,8 @@ import { formatCurrency, debounce } from "@muzammil-pos/utils";
 import { categoriesApi, productsApi } from "../../services/inventory";
 import { API_ORIGIN } from "../../services/http";
 import { useToastStore } from "../../store/toastStore";
+import { useShopSettings } from "../../store/settingsStore";
 import { ProductWizardModal } from "./ProductWizardModal";
-
-// Placeholder until the Settings module exists — matches the backend
-// default (settings.lowStockThreshold, see docs/database/schema.md).
-const LOW_STOCK_THRESHOLD = 5;
 
 const STATUS_OPTIONS = [
   { value: "", label: "All statuses" },
@@ -32,8 +29,8 @@ function totalStock(product: Product): number {
   return (product.variants ?? []).reduce((sum, v) => sum + v.quantity, 0);
 }
 
-function hasLowStock(product: Product): boolean {
-  return (product.variants ?? []).some((v) => v.status === "ACTIVE" && v.quantity < LOW_STOCK_THRESHOLD);
+function hasLowStock(product: Product, threshold: number): boolean {
+  return (product.variants ?? []).some((v) => v.status === "ACTIVE" && v.quantity < threshold);
 }
 
 function isOutOfStock(product: Product): boolean {
@@ -43,7 +40,7 @@ function isOutOfStock(product: Product): boolean {
 
 export function InventoryScreen() {
   const push = useToastStore((s) => s.push);
-
+  const { lowStockThreshold } = useShopSettings();
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [meta, setMeta] = useState({ page: 1, pageSize: 20, totalItems: 0, totalPages: 1 });
@@ -186,7 +183,7 @@ export function InventoryScreen() {
       render: (p) => {
         const stock = totalStock(p);
         if (isOutOfStock(p)) return <Badge tone="danger">Out of stock</Badge>;
-        if (hasLowStock(p)) {
+        if (hasLowStock(p, lowStockThreshold)) {
           return (
             <span className="inline-flex items-center gap-1.5">
               <span className="text-gray-700">{stock}</span>

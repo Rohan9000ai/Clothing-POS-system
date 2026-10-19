@@ -3,6 +3,7 @@ import { Errors } from "../../common/errors";
 import { recordAuditLog } from "../../common/audit-log";
 import { generateBillNo } from "@muzammil-pos/utils";
 import { getOrCreateWalkInCustomer, getCustomerById } from "../customers/customers.service";
+import { getSettings } from "../settings/settings.service";
 import type { CreateSaleInput, VoidSaleInput } from "@muzammil-pos/validation";
 import type { PaginationQuery } from "@muzammil-pos/types";
 
@@ -117,6 +118,8 @@ export async function createSale(input: CreateSaleInput, cashierId: string) {
   const paymentStatus = totalPaid === netTotal ? "PAID" : totalPaid > 0 ? "PARTIAL" : "UNPAID";
 
   const billNo = await generateUniqueBillNo();
+  // The tax rate in force right now is frozen on this bill, so later changes never alter it.
+  const { taxPercent } = await getSettings();
 
   return prisma.$transaction(async (tx) => {
     const sale = await tx.sale.create({
@@ -129,6 +132,7 @@ export async function createSale(input: CreateSaleInput, cashierId: string) {
         subTotal,
         discountTotal,
         netTotal,
+        taxPercent,
         paymentStatus,
         saleStatus: "COMPLETED",
         notes: input.notes ?? null,

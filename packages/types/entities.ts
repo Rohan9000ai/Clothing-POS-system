@@ -132,6 +132,8 @@ export interface Sale {
   subTotal: number; // paisa
   discountTotal: number; // paisa
   netTotal: number; // paisa
+  /** Tax already included in the prices, frozen when the bill was made. */
+  taxPercent: number;
   paymentStatus: PaymentStatus;
   saleStatus: SaleStatus;
   notes: string | null;

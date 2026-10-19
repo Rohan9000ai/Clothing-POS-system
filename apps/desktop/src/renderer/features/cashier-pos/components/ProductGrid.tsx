@@ -3,6 +3,7 @@ import { Badge, Card } from "@muzammil-pos/ui";
 import { formatCurrency } from "@muzammil-pos/utils";
 import type { CashierProduct } from "../../../services/cashier";
 import { API_ORIGIN } from "../../../services/http";
+import { useShopSettings } from "../../../store/settingsStore";
 
 interface ProductGridProps {
   products: CashierProduct[];
@@ -15,6 +16,7 @@ function totalStock(product: CashierProduct): number {
 }
 
 export function ProductGrid({ products, isLoading, onSelectProduct }: ProductGridProps) {
+  const { lowStockThreshold } = useShopSettings();
   if (isLoading) {
     return <div className="flex h-40 items-center justify-center text-sm text-gray-400">Loading products…</div>;
   }
@@ -53,7 +55,7 @@ export function ProductGrid({ products, isLoading, onSelectProduct }: ProductGri
             <p className="text-xs text-gray-400">{product.category?.name ?? "—"}</p>
             <div className="mt-2 flex items-center justify-between">
               <span className="text-sm font-semibold text-brand">{formatCurrency(product.basePrice)}</span>
-              <Badge tone={stock === 0 ? "danger" : stock < 5 ? "warning" : "neutral"}>{stock} in stock</Badge>
+              <Badge tone={stock === 0 ? "danger" : stock < lowStockThreshold ? "warning" : "neutral"}>{stock} in stock</Badge>
             </div>
           </Card>
         );

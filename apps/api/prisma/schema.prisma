@@ -234,6 +234,7 @@ model Sale {
   subTotal      Int      @map("sub_total") // paisa
   discountTotal Int      @default(0) @map("discount_total") // paisa
   netTotal      Int      @map("net_total") // paisa
+  taxPercent    Float    @default(0) @map("tax_percent") // tax already included in the prices, frozen when the sale was made
   paymentStatus String   @map("payment_status") // "PAID" | "PARTIAL" | "UNPAID"
   saleStatus    String   @default("COMPLETED") @map("sale_status") // "COMPLETED" | "VOID"
   notes         String?

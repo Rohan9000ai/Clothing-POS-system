@@ -1,14 +1,14 @@
 import { Router } from "express";
 import { asyncHandler } from "../../common/error-handler.middleware";
-import { requireAuth } from "../../common/auth-guard.middleware";
-import { notImplemented } from "../../common/not-implemented";
-import { getSettingsHandler } from "./settings.controller";
+import { validate } from "../../common/validate.middleware";
+import { requireAuth, requireRole } from "../../common/auth-guard.middleware";
+import { updateSettingsSchema } from "@muzammil-pos/validation";
+import { getSettingsHandler, putSettingsHandler } from "./settings.controller";
 
 export const settingsRouter = Router();
 
 settingsRouter.use(requireAuth);
 
-// Read is needed now for the invoice/receipt (shop name, header, footer).
-// Full editing UI + PUT lands on its own Settings build day.
+// Any signed-in user can read (the cashier screen needs the stock limit); only an admin can change.
 settingsRouter.get("/", asyncHandler(getSettingsHandler));
-settingsRouter.put("/", notImplemented("settings"));
+settingsRouter.put("/", requireRole("ADMIN"), validate(updateSettingsSchema), asyncHandler(putSettingsHandler));

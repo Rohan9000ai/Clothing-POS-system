@@ -1,4 +1,4 @@
-import { formatCurrency, formatDateTime } from "@muzammil-pos/utils";
+import { formatCurrency, formatDateTime, formatTaxPercent, taxIncludedAmount } from "@muzammil-pos/utils";
 import type { Settings } from "@muzammil-pos/types";
 import type { SaleDetail } from "../services/sales";
 
@@ -10,6 +10,11 @@ export function escapeHtml(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
+/** Escapes text but keeps the line breaks the owner typed. */
+function multiline(value: string): string {
+  return escapeHtml(value).replace(/\r?\n/g, "<br/>");
+}
+
 function statusLabel(status: SaleDetail["paymentStatus"]): string {
   return status === "PAID" ? "PAID" : status === "PARTIAL" ? "PARTIALLY PAID" : "UNPAID";
 }
@@ -18,13 +23,20 @@ function methodLabel(method: string): string {
   return method.replace("_", " ");
 }
 
+/** The tax already inside the bill total, from the rate that was frozen on the bill. */
+function taxOf(sale: SaleDetail): { percent: number; amount: number } {
+  const percent = sale.taxPercent ?? 0;
+  return { percent, amount: taxIncludedAmount(sale.netTotal, percent) };
+}
+
 /**
- * Full A4-style invoice — used for the on-screen preview and for printing
+ * Full A4-style invoice, used for the on-screen preview and for printing
  * to a regular printer (or "Print to PDF").
  */
 export function buildInvoiceHtml(sale: SaleDetail, settings: Settings): string {
   const items = sale.items ?? [];
   const payments = sale.payments ?? [];
+  const tax = taxOf(sale);
 
   const itemRows = items
     .map(
@@ -54,7 +66,7 @@ export function buildInvoiceHtml(sale: SaleDetail, settings: Settings): string {
   <html>
   <head>
     <meta charset="utf-8" />
-    <title>Invoice ${sale.billNo}</title>
+    <title>Invoice ${escapeHtml(sale.billNo)}</title>
     <style>
       @page { size: A4; margin: 18mm; }
       * { box-sizing: border-box; }
@@ -75,15 +87,16 @@ export function buildInvoiceHtml(sale: SaleDetail, settings: Settings): string {
       .totals { width: 260px; margin-left: auto; font-size: 13px; }
       .totals div { display: flex; justify-content: space-between; padding: 3px 0; }
       .totals .grand { font-size: 16px; font-weight: 700; border-top: 2px solid #111827; padding-top: 6px; margin-top: 4px; }
+      .totals .tax { color: #6b7280; font-size: 11px; }
       .payments { margin-top: 10px; font-size: 11px; color: #6b7280; }
-      .footer { margin-top: 24px; padding-top: 12px; border-top: 1px dashed #d1d5db; font-size: 11px; color: #6b7280; text-align: center; }
+      .footer { margin-top: 24px; padding-top: 12px; border-top: 1px dashed #d1d5db; font-size: 11px; color: #6b7280; text-align: center; line-height: 1.5; }
     </style>
   </head>
   <body>
     <div class="header">
       <div>
         <div class="shop-name">${escapeHtml(settings.shopName)}</div>
-        ${settings.receiptHeader ? `<div class="tagline">${escapeHtml(settings.receiptHeader)}</div>` : ""}
+        ${settings.receiptHeader ? `<div class="tagline" dir="auto">${multiline(settings.receiptHeader)}</div>` : ""}
       </div>
       <div class="invoice-meta">
         <span class="status">${statusLabel(sale.paymentStatus)}</span>
@@ -123,23 +136,29 @@ export function buildInvoiceHtml(sale: SaleDetail, settings: Settings): string {
       <div><span>Subtotal</span><span>${formatCurrency(sale.subTotal)}</span></div>
       <div><span>Discount</span><span>−${formatCurrency(sale.discountTotal)}</span></div>
       <div class="grand"><span>Grand total</span><span>${formatCurrency(sale.netTotal)}</span></div>
+      ${
+        tax.amount > 0
+          ? `<div class="tax"><span>Includes tax (${formatTaxPercent(tax.percent)})</span><span>${formatCurrency(tax.amount)}</span></div>`
+          : ""
+      }
     </div>
 
     <div class="payments">Payment: ${paymentLines}</div>
 
-    <div class="footer">
-      ${settings.receiptFooter ? escapeHtml(settings.receiptFooter) : "Thank you for shopping with us."}
+    <div class="footer" dir="auto">
+      ${settings.receiptFooter ? multiline(settings.receiptFooter) : "Thank you for shopping with us."}
     </div>
   </body>
   </html>`;
 }
 
 /**
- * Narrow 80mm thermal receipt — used for the "Print Thermal Receipt" action.
+ * Narrow 80mm thermal receipt, used for the "Print Thermal Receipt" action.
  */
 export function buildThermalReceiptHtml(sale: SaleDetail, settings: Settings): string {
   const items = sale.items ?? [];
   const payments = sale.payments ?? [];
+  const tax = taxOf(sale);
 
   const itemLines = items
     .map(
@@ -168,7 +187,7 @@ export function buildThermalReceiptHtml(sale: SaleDetail, settings: Settings): s
   <html>
   <head>
     <meta charset="utf-8" />
-    <title>Receipt ${sale.billNo}</title>
+    <title>Receipt ${escapeHtml(sale.billNo)}</title>
     <style>
       @page { size: 80mm auto; margin: 0; }
       * { box-sizing: border-box; }
@@ -182,13 +201,14 @@ export function buildThermalReceiptHtml(sale: SaleDetail, settings: Settings): s
       .item-sub { font-size: 10px; color: #333; }
       .item-row, .row { display: flex; justify-content: space-between; }
       .totals .row.grand { font-weight: 700; font-size: 13px; border-top: 1px solid #000; padding-top: 3px; margin-top: 3px; }
-      .footer { margin-top: 10px; font-size: 10px; }
+      .totals .row.tax { font-size: 10px; margin-top: 2px; }
+      .footer { margin-top: 10px; font-size: 10px; line-height: 1.4; }
     </style>
   </head>
   <body>
     <div class="center">
       <div class="shop-name">${escapeHtml(settings.shopName)}</div>
-      ${settings.receiptHeader ? `<div class="tagline">${escapeHtml(settings.receiptHeader)}</div>` : ""}
+      ${settings.receiptHeader ? `<div class="tagline" dir="auto">${multiline(settings.receiptHeader)}</div>` : ""}
       <div class="meta">Bill #${escapeHtml(sale.billNo)} · ${formatDateTime(sale.saleDate)}</div>
     </div>
 
@@ -202,6 +222,11 @@ export function buildThermalReceiptHtml(sale: SaleDetail, settings: Settings): s
       <div class="row"><span>Subtotal</span><span>${formatCurrency(sale.subTotal)}</span></div>
       <div class="row"><span>Discount</span><span>−${formatCurrency(sale.discountTotal)}</span></div>
       <div class="row grand"><span>TOTAL</span><span>${formatCurrency(sale.netTotal)}</span></div>
+      ${
+        tax.amount > 0
+          ? `<div class="row tax"><span>Incl. tax (${formatTaxPercent(tax.percent)})</span><span>${formatCurrency(tax.amount)}</span></div>`
+          : ""
+      }
     </div>
 
     <div class="divider"></div>
@@ -210,8 +235,8 @@ export function buildThermalReceiptHtml(sale: SaleDetail, settings: Settings): s
 
     <div class="divider"></div>
 
-    <div class="center footer">
-      ${settings.receiptFooter ? escapeHtml(settings.receiptFooter) : "Thank you for shopping with us."}
+    <div class="center footer" dir="auto">
+      ${settings.receiptFooter ? multiline(settings.receiptFooter) : "Thank you for shopping with us."}
     </div>
   </body>
   </html>`;
