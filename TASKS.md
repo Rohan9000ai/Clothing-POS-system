@@ -317,6 +317,17 @@ since it returns a row, $executeRawUnsafe rejected it)
 - [ ] Screens and PDFs not yet confirmed by the owner (all four tabs)
 - [ ] Housekeeping: delete the "RESTORE TEST" supplier; replace the test cost prices with real ones
 
+## Day 31 — Settings backend & UI 🟡 BUILT (awaiting owner's check)
+- [x] PUT /api/settings (admin only; any signed-in user can read): shop name, header, footer (up to 4 lines),
+      tax percent, low-stock limit; validated; saves leave an audit entry; a save that changes nothing writes nothing
+- [x] Tax is INCLUDED in prices (not added on top): receipts/invoices show "Includes tax (x%)"; totals, payments and
+      reports are unchanged. Each bill freezes its rate (new column sales.tax_percent, migration add_sale_tax_percent)
+- [x] Settings page: form + live preview (thermal receipt / invoice) + "Print test receipt"
+- [x] Shop name, header, footer apply to invoices, receipts and report PDFs at print time (reprints use current wording)
+- [x] Low-stock limit applied in Inventory and the cashier grid (shared settings store); stock report/alerts already used it
+- [ ] Sidebar/login keep the fixed Urdu branding; placeholder dashboard still shows "Below 5" until the real dashboard
+- [ ] Tax added on top of prices (affects POS, payments, reports) not built — only if the owner wants it
+
 ## Environment notes (Windows ↔ Linux)
 - Live database file is `apps/database/muzammil_store.db` (Prisma resolves a relative path from the `prisma/` folder)
 - Only ONE env file: `apps/api/.env` (a second `prisma/.env` causes a conflict error)
