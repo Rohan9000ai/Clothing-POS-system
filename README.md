@@ -18,6 +18,7 @@ bilingual **Urdu / English** interface for both the Admin and Cashier screens.
 - **Data safety first** — WAL-mode SQLite, transactional writes, versioned automatic backups
 - **Built to grow** — barcode support and multi-terminal/networked mode can be added later without a schema rewrite
 
+
 ## 2. Tech stack
 
 | Layer | Choice |
