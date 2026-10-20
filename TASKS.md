@@ -327,7 +327,20 @@ since it returns a row, $executeRawUnsafe rejected it)
 - [x] Low-stock limit applied in Inventory and the cashier grid (shared settings store); stock report/alerts already used it
 - [ ] Sidebar/login keep the fixed Urdu branding; placeholder dashboard still shows "Below 5" until the real dashboard
 - [ ] Tax added on top of prices (affects POS, payments, reports) not built — only if the owner wants it
-
+## Day 31 — Settings backend & UI 🟡 BACKEND ✅ VERIFIED 19 Oct 2026, SCREEN PENDING
+- [x] PUT /api/settings (admin only; any signed-in user can read): shop name, header, footer (up to 4 lines),
+      tax percent, low-stock limit; validated; audited; a save that changes nothing writes nothing
+- [x] Tax is INCLUDED in prices (not added on top): receipts show "Includes tax (x%)"; totals, payments and reports
+      unchanged. Each bill freezes its rate (sales.tax_percent, migration add_sale_tax_percent)
+- [x] Settings page: form + live preview (thermal receipt / invoice) + "Print test receipt"
+- [x] Low-stock limit applied in Inventory and the cashier grid; stock report/alerts already used it
+- [x] Verified: save trims/rounds (5.567 -> 5.57); 8 invalid inputs refused naming the right field; cashier can read, not write
+- [x] Verified: limit 50 gives 12 in the low-stock endpoint = stock report = SQL
+- [x] Verified: a new bill takes the current rate (12%, then 0%); an old bill keeps its own (12% stayed 12%)
+- [x] Verified: audit log has one row per save that changed something; refused and no-op saves leave none
+- [ ] Screen not yet checked by the owner: live preview, test print, tax line on a real invoice, badges following the limit
+- [ ] Sidebar/login keep the fixed Urdu branding; placeholder dashboard still shows "Below 5" until the real dashboard
+- [ ] Tax added on top of prices (touches POS, payments, reports) not built; only if the owner wants it
 ## Environment notes (Windows ↔ Linux)
 - Live database file is `apps/database/muzammil_store.db` (Prisma resolves a relative path from the `prisma/` folder)
 - Only ONE env file: `apps/api/.env` (a second `prisma/.env` causes a conflict error)
