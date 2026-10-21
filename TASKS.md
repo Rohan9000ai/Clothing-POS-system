@@ -341,6 +341,18 @@ since it returns a row, $executeRawUnsafe rejected it)
 - [ ] Screen not yet checked by the owner: live preview, test print, tax line on a real invoice, badges following the limit
 - [ ] Sidebar/login keep the fixed Urdu branding; placeholder dashboard still shows "Below 5" until the real dashboard
 - [ ] Tax added on top of prices (touches POS, payments, reports) not built; only if the owner wants it
+
+## Day 32 — Admin dashboard data 🟡 BUILT (awaiting owner's checks)
+- [x] GET /api/dashboard (admin only): today's sales, bills and expenses (with the supplier-payment part), yesterday's
+      figures, stock pieces/products/sizes, last-7-days sales by day (gap-free), 8 newest completed bills of the last 7 days,
+      low-stock list (lowest first, uses the Settings limit, 8 shown of N)
+- [x] Dashboard screen: 4 tiles (yesterday shown as a plain figure, no misleading percent), 7-day bar chart (best day darkest,
+      last bar "Today"), recent sales table (bill links to its invoice; salesman name + short ID), low-stock table
+- [x] Refreshes every minute and when the window regains focus; keeps the last numbers if a refresh fails
+- [x] Voided bills and deleted expenses are never counted; today's sale equals the last chart bar (same data)
+- [ ] Backend checks and screen not yet confirmed by the owner
+- [ ] housekeeping: features/admin-dashboard/components/SalesBarChart.tsx is now unused and can be deleted
+- Owner voided MS-2026-00002, so Receivables is now zero (customer payments on bills are still not recordable) 
 ## Environment notes (Windows ↔ Linux)
 - Live database file is `apps/database/muzammil_store.db` (Prisma resolves a relative path from the `prisma/` folder)
 - Only ONE env file: `apps/api/.env` (a second `prisma/.env` causes a conflict error)
