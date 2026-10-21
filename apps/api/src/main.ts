@@ -25,6 +25,7 @@ import { reportsRouter } from "./modules/reports/reports.module";
 import { settingsRouter } from "./modules/settings/settings.module";
 import { backupsRouter } from "./modules/backups/backups.module";
 import { startBackupScheduler } from "./modules/backups/backups.service";
+import { dashboardRouter } from "./modules/dashboard/dashboard.module";
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.use("/api/expenses", expensesRouter);
 app.use("/api/reports", reportsRouter);
 app.use("/api/settings", settingsRouter);
 app.use("/api/backups", backupsRouter);
+app.use("/api/dashboard", dashboardRouter);
 
 // ---- 404 for unknown routes ----
 app.use((req, res) => {
