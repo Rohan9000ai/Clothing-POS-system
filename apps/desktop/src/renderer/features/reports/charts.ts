@@ -109,6 +109,8 @@ export interface BarChartOptions {
   emptyText: string;
   ariaLabel: string;
   height?: number;
+  /** Drawing width in pixels. Defaults to 760. Pass the real container width to keep text sharp and the height steady. */
+  width?: number;
 }
 
 /**
@@ -117,7 +119,7 @@ export interface BarChartOptions {
  */
 export function barChartSvg(options: BarChartOptions): string {
   const { points, color, highlightColor, formatAxis, emptyText, ariaLabel } = options;
-  const width = 760;
+  const width = options.width ?? 760;
   const height = options.height ?? 250;
   const padLeft = 54;
   const padRight = 12;

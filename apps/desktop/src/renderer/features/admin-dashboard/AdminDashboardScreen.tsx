@@ -1,44 +1,16 @@
-import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Banknote, Boxes, Receipt, RefreshCw, Wallet } from "lucide-react";
+import { Banknote, Boxes, Receipt, Wallet } from "lucide-react";
 import { Badge, Button, Card, Table, type TableColumn } from "@muzammil-pos/ui";
 import { formatCurrency, formatDateTime } from "@muzammil-pos/utils";
-import type { DashboardData, DashboardLowStockItem, DashboardSale } from "../../services/dashboard";
+import type { DashboardLowStockItem, DashboardSale } from "../../services/dashboard";
 import { salesmanCode } from "../../utils/salesmanCode";
-import { barChartSvg } from "../reports/charts";
-import { SvgChart } from "../reports/components/SvgChart";
-import { SALE_METHOD_LABELS, formatCompactMoney, formatDayFull, plural } from "../reports/reportFormat";
+import { SALE_METHOD_LABELS, formatDayFull, plural } from "../reports/reportFormat";
+import { DashboardSkeleton } from "./components/DashboardSkeleton";
 import { KpiCard } from "./components/KpiCard";
+import { RefreshControls } from "./components/RefreshControls";
+import { SalesChartCard } from "./components/SalesChartCard";
+import { timeLabel } from "./dashboardTime";
 import { useDashboardData } from "./useDashboardData";
-
-const weekdayFormatter = new Intl.DateTimeFormat("en-PK", { weekday: "short", timeZone: "UTC" });
-
-function weekdayLabel(ymd: string): string {
-  return weekdayFormatter.format(new Date(`${ymd}T00:00:00.000Z`));
-}
-
-function timeLabel(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
-}
-
-function buildChartSvg(data: DashboardData): string {
-  const days = data.salesLast7Days.daily;
-  const points = days.map((day, index) => ({
-    label: index === days.length - 1 ? "Today" : weekdayLabel(day.date),
-    tooltip: `${formatDayFull(day.date)} — ${formatCurrency(day.netSales)} · ${plural(day.billCount, "bill")}`,
-    value: day.netSales,
-  }));
-
-  return barChartSvg({
-    points,
-    color: "#4F46E5",
-    highlightColor: "#3730A3",
-    formatAxis: formatCompactMoney,
-    emptyText: "No sales in the last 7 days",
-    ariaLabel: "Net sales for the last 7 days",
-    height: 230,
-  });
-}
 
 const RECENT_SALES_COLUMNS: TableColumn<DashboardSale>[] = [
   {
@@ -110,16 +82,30 @@ const LOW_STOCK_COLUMNS: TableColumn<DashboardLowStockItem>[] = [
 ];
 
 export function AdminDashboardScreen() {
-  const { data, error, isRefreshing, refresh } = useDashboardData();
-  const chartSvg = useMemo(() => (data ? buildChartSvg(data) : null), [data]);
+  const { data, error, refreshingSource, autoRefresh, setAutoRefresh, refresh } = useDashboardData();
 
-  if (!data || !chartSvg) {
+  const header = (
+    <div className="flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <h2 className="text-title text-gray-900">Dashboard</h2>
+        <p className="text-sm text-gray-400">
+          {data ? formatDayFull(data.todayDate) : "Overview of today's shop activity"}
+        </p>
+      </div>
+      <RefreshControls
+        generatedAt={data?.generatedAt ?? null}
+        autoRefresh={autoRefresh}
+        onToggleAuto={setAutoRefresh}
+        refreshingSource={refreshingSource}
+        onRefresh={() => void refresh()}
+      />
+    </div>
+  );
+
+  if (!data) {
     return (
       <div className="space-y-6">
-        <div>
-          <h2 className="text-title text-gray-900">Dashboard</h2>
-          <p className="text-sm text-gray-400">Overview of today's shop activity</p>
-        </div>
+        {header}
         {error ? (
           <Card className="flex flex-col items-center gap-3 text-center">
             <p className="text-sm text-danger">{error}</p>
@@ -128,13 +114,13 @@ export function AdminDashboardScreen() {
             </Button>
           </Card>
         ) : (
-          <Card className="text-center text-sm text-gray-400">Loading the dashboard…</Card>
+          <DashboardSkeleton />
         )}
       </div>
     );
   }
 
-  const { today, yesterday, stock, salesLast7Days, recentSales, lowStock } = data;
+  const { today, yesterday, stock, recentSales, lowStock } = data;
 
   const expensesHint = [
     `Yesterday ${formatCurrency(yesterday.expensesTotal)}`,
@@ -145,18 +131,7 @@ export function AdminDashboardScreen() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-title text-gray-900">Dashboard</h2>
-          <p className="text-sm text-gray-400">
-            {formatDayFull(data.todayDate)} · updated {timeLabel(data.generatedAt)}
-          </p>
-        </div>
-        <Button variant="secondary" onClick={() => void refresh()} isLoading={isRefreshing}>
-          <RefreshCw size={16} />
-          Refresh
-        </Button>
-      </div>
+      {header}
 
       {error && (
         <div className="rounded-card border border-warning/30 bg-warning-light px-4 py-2 text-sm text-warning">
@@ -164,49 +139,41 @@ export function AdminDashboardScreen() {
         </div>
       )}
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         <KpiCard
           label="Today's Sales"
           value={formatCurrency(today.netSales)}
           hint={`Yesterday ${formatCurrency(yesterday.netSales)}`}
           icon={Banknote}
+          to="/sales"
         />
         <KpiCard
           label="Today's Bills"
           value={String(today.billCount)}
           hint={`Yesterday ${yesterday.billCount}`}
           icon={Receipt}
+          to="/sales"
         />
         <KpiCard
           label="Today's Expenses"
           value={formatCurrency(today.expensesTotal)}
           hint={expensesHint}
           icon={Wallet}
+          to="/expenses"
         />
         <KpiCard
           label="Total Stock Items"
           value={String(stock.totalPieces)}
           hint={`${plural(stock.productCount, "product")} · ${plural(stock.variantCount, "size/color", "sizes/colors")}`}
           icon={Boxes}
+          to="/inventory"
         />
       </div>
 
-      <Card>
-        <div className="mb-2 flex items-center justify-between">
-          <div>
-            <h3 className="text-section text-gray-900">7-Day Sales Activity</h3>
-            <p className="text-xs text-gray-400">Net sales per day. Darkest bar = best day. Hover a bar for details.</p>
-          </div>
-          <div className="text-right">
-            <p className="text-sm font-semibold text-gray-900">{formatCurrency(salesLast7Days.total.netSales)}</p>
-            <p className="text-xs text-gray-400">{plural(salesLast7Days.total.billCount, "bill")} in 7 days</p>
-          </div>
-        </div>
-        <SvgChart svg={chartSvg} />
-      </Card>
+      <SalesChartCard data={data} />
 
-      <div className="grid grid-cols-3 gap-6">
-        <section className="col-span-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <section className="min-w-0 xl:col-span-2">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-section text-gray-900">Recent Sales (last 7 days)</h3>
             <Link to="/sales" className="text-sm font-medium text-brand hover:underline">
@@ -221,7 +188,7 @@ export function AdminDashboardScreen() {
           />
         </section>
 
-        <section>
+        <section className="min-w-0">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h3 className="text-section text-gray-900">Low Stock</h3>
@@ -255,7 +222,7 @@ export function AdminDashboardScreen() {
       </div>
 
       <p className="text-xs text-gray-400">
-        Voided bills and deleted expenses are never counted. Updates itself every minute.
+        Voided bills and deleted expenses are never counted. Click a tile to open that page.
       </p>
     </div>
   );
