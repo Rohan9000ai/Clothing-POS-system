@@ -373,6 +373,7 @@ since it returns a row, $executeRawUnsafe rejected it)
 - Keep offline: `apps/api/.env`, backup Gmail details, Google Client ID/secret
 - Google Client secret and token were pasted into a chat; owner chose not to rotate. Rotate if that transcript is shared.
 
+
 ## Still to build
 - [ ] Dashboard with real numbers (today's sales/bills/expenses, stock, 7-day chart, recent sales, low stock)
 - [ ] Settings screen: receipt header/footer with live preview, low-stock threshold (fixed at 5 in the UI today), language
