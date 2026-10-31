@@ -354,6 +354,7 @@ since it returns a row, $executeRawUnsafe rejected it)
 - [ ] housekeeping: features/admin-dashboard/components/SalesBarChart.tsx is now unused and can be deleted
 - Owner voided MS-2026-00002, so Receivables is now zero (customer payments on bills are still not recordable) 
 
+
 ## Day 33 — Admin dashboard UI 🟡 BUILT (awaiting owner's check)
 - [x] Responsive: tiles 4-across at >=1280 px, 2x2 below; recent sales beside low stock at >=1280 px, stacked below;
       wide tables scroll inside their own card (Electron minimum window width is 1024)
