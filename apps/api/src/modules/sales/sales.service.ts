@@ -212,6 +212,7 @@ export async function voidSale(id: string, input: VoidSaleInput, voidedById: str
 
   return prisma.$transaction(async (tx) => {
     for (const item of sale.items) {
+      if (!item.variantId) continue; // its size was deleted, so there is no stock to put back
       await tx.productVariant.update({
         where: { id: item.variantId },
         data: { quantity: { increment: item.quantity } },

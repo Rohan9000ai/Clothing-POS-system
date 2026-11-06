@@ -154,7 +154,7 @@ export async function getSalesReport(query: SalesReportQuery) {
     .slice(0, query.topN);
 
   // ---- Names for everything we are about to return ----
-  const topProductIds = [...new Set([...topByQuantity, ...topByRevenue].map((r) => r.productId))];
+    const topProductIds = [...new Set([...topByQuantity, ...topByRevenue].flatMap((r) => (r.productId ? [r.productId] : [])))];
   const salesmanIds = [...salesmanBuckets.keys()].filter((id): id is string => id !== null);
 
   const [cashiers, salesmen, products] = await Promise.all([
@@ -177,9 +177,9 @@ export async function getSalesReport(query: SalesReportQuery) {
   const productById = new Map(products.map((p) => [p.id, p] as const));
 
   const toProductRow = (row: (typeof itemRows)[number], shareOf: "quantity" | "revenue") => {
-    const product = productById.get(row.productId);
+      const product = row.productId ? productById.get(row.productId) : undefined;
     return {
-      productId: row.productId,
+      productId: row.productId ?? "deleted",
       name: product?.name ?? "Deleted product",
       productCode: product?.productCode ?? "",
       categoryName: product?.category.name ?? null,

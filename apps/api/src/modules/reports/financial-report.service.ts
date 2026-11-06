@@ -42,6 +42,7 @@ async function computeCore(range: ReportRange, topN: number) {
         productId: true,
         variantId: true,
         quantity: true,
+        unitCostSnapshot: true,
         lineTotal: true,
         sale: { select: { saleDate: true } },
       },
@@ -64,7 +65,7 @@ async function computeCore(range: ReportRange, topN: number) {
   ]);
 
   // ---- What each piece cost ----
-  const productIds = [...new Set(items.map((item) => item.productId))];
+  const productIds = [...new Set(items.flatMap((item) => (item.productId ? [item.productId] : [])))];
   const [products, billItems] = await Promise.all([
     prisma.product.findMany({
       where: { id: { in: productIds } },
@@ -99,9 +100,9 @@ async function computeCore(range: ReportRange, topN: number) {
   );
   const billCostByVariant = new Map<string, number>();
   const billCostByProduct = new Map<string, number>();
-  for (const bill of billItems) {
-    if (!billCostByVariant.has(bill.variantId)) billCostByVariant.set(bill.variantId, bill.unitCost);
-    if (!billCostByProduct.has(bill.productId)) billCostByProduct.set(bill.productId, bill.unitCost);
+    for (const bill of billItems) {
+    if (bill.variantId && !billCostByVariant.has(bill.variantId)) billCostByVariant.set(bill.variantId, bill.unitCost);
+    if (bill.productId && !billCostByProduct.has(bill.productId)) billCostByProduct.set(bill.productId, bill.unitCost);
   }
 
   // ---- Sales side ----
@@ -123,17 +124,17 @@ async function computeCore(range: ReportRange, topN: number) {
   const gapByProduct = new Map<string, { quantity: number; revenue: number }>();
 
   for (const item of items) {
-    const fromProduct = costPriceByProduct.get(item.productId);
-    const fromBill = billCostByVariant.get(item.variantId) ?? billCostByProduct.get(item.productId);
-    const unitCost = fromProduct ?? fromBill;
+    const fromProduct = item.productId ? costPriceByProduct.get(item.productId) : undefined;
+    const fromBill = item.productId && item.variantId ? (billCostByVariant.get(item.variantId) ?? billCostByProduct.get(item.productId)) : undefined;
+    const unitCost = item.unitCostSnapshot ?? fromProduct ?? fromBill;
 
     if (unitCost === undefined) {
       costBySource.UNKNOWN.quantity += item.quantity;
       costBySource.UNKNOWN.revenue += item.lineTotal;
-      const gap = gapByProduct.get(item.productId) ?? { quantity: 0, revenue: 0 };
+      const gap = gapByProduct.get(item.productId ?? "deleted") ?? { quantity: 0, revenue: 0 };
       gap.quantity += item.quantity;
       gap.revenue += item.lineTotal;
-      gapByProduct.set(item.productId, gap);
+      gapByProduct.set(item.productId ?? "deleted", gap);
       continue;
     }
 

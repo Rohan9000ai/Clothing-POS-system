@@ -208,22 +208,23 @@ export async function voidSupplierPurchase(
 
   // Voiding takes this stock back out, so it must still be on the shelf.
   const variants = await prisma.productVariant.findMany({
-    where: { id: { in: purchase.items.map((i) => i.variantId) } },
+        where: { id: { in: purchase.items.flatMap((i) => (i.variantId ? [i.variantId] : [])) } },
   });
   const variantById = new Map(variants.map((v) => [v.id, v]));
 
   const shortfalls = purchase.items
-    .filter((item) => (variantById.get(item.variantId)?.quantity ?? 0) < item.quantity)
+    .filter((item) => item.variantId !== null && (variantById.get(item.variantId)?.quantity ?? 0) < item.quantity)
     .map((item) => ({
       label: `${item.productNameSnapshot} — ${item.sizeSnapshot} / ${item.colorSnapshot}`,
       bought: item.quantity,
-      inStock: variantById.get(item.variantId)?.quantity ?? 0,
+      inStock: variantById.get(item.variantId ?? "")?.quantity ?? 0,
     }));
   if (shortfalls.length > 0) throw Errors.purchaseStockAlreadyUsed(shortfalls);
 
   return prisma.$transaction(
     async (tx) => {
       for (const item of purchase.items) {
+        if (!item.variantId) continue; // its size was deleted, so there is no stock to take back
         // Conditional decrement, so a sale happening right now can't push stock below zero.
         const removed = await tx.productVariant.updateMany({
           where: { id: item.variantId, quantity: { gte: item.quantity } },

@@ -44,9 +44,9 @@ export async function loadCostLookup(productIds: string[]): Promise<CostLookup> 
   );
   const billCostByVariant = new Map<string, number>();
   const billCostByProduct = new Map<string, number>();
-  for (const item of billItems) {
-    if (!billCostByVariant.has(item.variantId)) billCostByVariant.set(item.variantId, item.unitCost);
-    if (!billCostByProduct.has(item.productId)) billCostByProduct.set(item.productId, item.unitCost);
+    for (const item of billItems) {
+    if (item.variantId && !billCostByVariant.has(item.variantId)) billCostByVariant.set(item.variantId, item.unitCost);
+    if (item.productId && !billCostByProduct.has(item.productId)) billCostByProduct.set(item.productId, item.unitCost);
   }
 
   return {

@@ -26,6 +26,7 @@ import { settingsRouter } from "./modules/settings/settings.module";
 import { backupsRouter } from "./modules/backups/backups.module";
 import { startBackupScheduler } from "./modules/backups/backups.service";
 import { dashboardRouter } from "./modules/dashboard/dashboard.module";
+import { inventoryDeleteRouter } from "./modules/inventory/delete.module";
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use("/uploads", express.static(env.uploadsRootDir));
 app.use("/api/health", healthRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/users", usersRouter);
+app.use("/api/inventory", inventoryDeleteRouter);
 app.use("/api/inventory", inventoryRouter);
 app.use("/api/sales", salesRouter);
 app.use("/api/suppliers", suppliersRouter);
