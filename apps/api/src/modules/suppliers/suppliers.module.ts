@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { asyncHandler } from "../../common/error-handler.middleware";
 import { validate } from "../../common/validate.middleware";
+import { confirmAdminPassword } from "../../common/confirm-password";
 import { requireAuth, requireRole } from "../../common/auth-guard.middleware";
 import {
   createSupplierSchema,
@@ -46,8 +47,7 @@ suppliersRouter.patch(
   validate(toggleSupplierStatusSchema),
   asyncHandler(patchSupplierStatus)
 );
-suppliersRouter.delete("/:id", requireRole("ADMIN"), asyncHandler(deleteSupplierHandler));
-
+suppliersRouter.delete("/:id", requireRole("ADMIN"), confirmAdminPassword, asyncHandler(deleteSupplierHandler));
 suppliersRouter.get("/:id/transactions", asyncHandler(getSupplierTransactions));
 suppliersRouter.post(
   "/:id/transactions",

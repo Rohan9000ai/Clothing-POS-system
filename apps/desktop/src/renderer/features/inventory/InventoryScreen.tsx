@@ -18,6 +18,7 @@ import { API_ORIGIN } from "../../services/http";
 import { useToastStore } from "../../store/toastStore";
 import { useShopSettings } from "../../store/settingsStore";
 import { ProductWizardModal } from "./ProductWizardModal";
+import { requestDelete } from "../../store/confirmDeleteStore";
 
 const STATUS_OPTIONS = [
   { value: "", label: "All statuses" },
@@ -54,8 +55,6 @@ export function InventoryScreen() {
   const [page, setPage] = useState(1);
 
   const [wizardState, setWizardState] = useState<{ product?: Product } | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const debouncedSetSearch = useMemo(
@@ -126,21 +125,16 @@ export function InventoryScreen() {
     }
   }
 
-  async function handleConfirmDelete() {
-    if (!deleteTarget) return;
-    setIsDeleting(true);
-    try {
-      await productsApi.remove(deleteTarget.id);
-      push("success", `Product "${deleteTarget.name}" was deleted.`);
-      setDeleteTarget(null);
-      void loadProducts();
-    } catch (err) {
-      // e.g. product has variants/sale history — server message explains.
-      push("error", err instanceof Error ? err.message : "Could not delete product.");
-      setDeleteTarget(null);
-    } finally {
-      setIsDeleting(false);
-    }
+    function askDelete(product: Product) {
+    requestDelete({
+      itemName: `${product.name} (${product.productCode})`,
+      note: "This also deletes all its sizes and any stock still left. Old bills and reports keep their records.",
+      run: async (password) => {
+        await productsApi.remove(product.id, password);
+        push("success", `Product "${product.name}" was deleted.`);
+        void loadProducts();
+      },
+    });
   }
 
   const categoryOptions = useMemo(
@@ -212,7 +206,7 @@ export function InventoryScreen() {
           <IconButton label="Edit product" onClick={() => setWizardState({ product: p })}>
             <Pencil size={15} />
           </IconButton>
-          <IconButton label="Delete product" danger onClick={() => setDeleteTarget(p)}>
+          <IconButton label="Delete product" danger onClick={() => askDelete(p)}>
             <Trash2 size={15} />
           </IconButton>
         </div>
@@ -332,30 +326,6 @@ export function InventoryScreen() {
         />
       )}
 
-      <Modal
-        isOpen={!!deleteTarget}
-        onClose={() => !isDeleting && setDeleteTarget(null)}
-        title="Delete product?"
-        size="sm"
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => setDeleteTarget(null)} disabled={isDeleting}>
-              Cancel
-            </Button>
-            <Button variant="danger" onClick={handleConfirmDelete} isLoading={isDeleting}>
-              Delete
-            </Button>
-          </>
-        }
-      >
-        <p className="text-sm text-gray-600">
-          Permanently delete <span className="font-semibold">{deleteTarget?.name}</span> (
-          {deleteTarget?.productCode})? This cannot be undone.
-        </p>
-        <p className="mt-2 text-xs text-gray-400">
-          If this product has sizes/colors or sales history, deletion is blocked — deactivate it instead.
-        </p>
-      </Modal>
     </div>
   );
 }

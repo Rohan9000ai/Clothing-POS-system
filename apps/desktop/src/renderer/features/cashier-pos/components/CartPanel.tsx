@@ -5,6 +5,7 @@ import { formatCurrency, fromPaisa, toPaisa } from "@muzammil-pos/utils";
 import type { Salesman } from "@muzammil-pos/types";
 import { useAuthStore } from "../../../store/authStore";
 import { useCartStore } from "../../../store/cartStore";
+import { useT } from "../../../i18n/store";
 import { PaymentModal } from "./PaymentModal";
 
 interface CartPanelProps {
@@ -13,8 +14,8 @@ interface CartPanelProps {
 
 export function CartPanel({ salesmen }: CartPanelProps) {
   const user = useAuthStore((s) => s.user);
-  const { items, salesmanId, setSalesmanId, updateQuantity, updateLineDiscount, removeItem } =
-    useCartStore();
+  const t = useT();
+  const { items, salesmanId, setSalesmanId, updateQuantity, updateLineDiscount, removeItem } = useCartStore();
 
   const [discountDrafts, setDiscountDrafts] = useState<Record<string, string>>({});
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
@@ -25,7 +26,7 @@ export function CartPanel({ salesmen }: CartPanelProps) {
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
   const salesmanOptions = [
-    { value: "", label: "No salesman" },
+    { value: "", label: t("No salesman") },
     ...salesmen.map((s) => ({ value: s.id, label: s.name })),
   ];
 
@@ -46,19 +47,19 @@ export function CartPanel({ salesmen }: CartPanelProps) {
     <div className="flex h-full flex-col">
       <div className="space-y-3 border-b border-gray-200 p-4">
         <div>
-          <p className="text-xs font-medium text-gray-500">Customer</p>
+          <p className="text-xs font-medium text-gray-500">{t("Customer")}</p>
           <p className="mt-1 rounded-control border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
-            Walk-in Customer
+            {t("Walk-in Customer")}
           </p>
         </div>
         <Select
-          label="Salesman"
+          label={t("Salesman")}
           value={salesmanId ?? ""}
           onChange={(e) => setSalesmanId(e.target.value || null)}
           options={salesmanOptions}
         />
         <div>
-          <p className="text-xs font-medium text-gray-500">Cashier</p>
+          <p className="text-xs font-medium text-gray-500">{t("Cashier")}</p>
           <p className="mt-1 rounded-control border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
             {user?.fullName ?? "—"}
           </p>
@@ -68,8 +69,8 @@ export function CartPanel({ salesmen }: CartPanelProps) {
       <div className="flex-1 overflow-y-auto px-4 py-3">
         {items.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center gap-1 text-center text-sm text-gray-400">
-            <p>Cart is empty.</p>
-            <p className="text-xs">Select products from the left to start a sale.</p>
+            <p>{t("Cart is empty.")}</p>
+            <p className="text-xs">{t("Select products to start a sale.")}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -79,13 +80,13 @@ export function CartPanel({ salesmen }: CartPanelProps) {
                   <div>
                     <p className="text-sm font-medium text-gray-900">{item.productName}</p>
                     <p className="text-xs text-gray-400">
-                      {item.size} / {item.color} · Stock available: {item.availableStock}
+                      {item.size} / {item.color} · {t("Stock available: {n}", { n: item.availableStock })}
                     </p>
                   </div>
                   <button
                     onClick={() => removeItem(item.variantId)}
                     className="rounded-control p-1 text-gray-300 hover:bg-danger-light hover:text-danger"
-                    title="Remove item"
+                    title={t("Remove item")}
                   >
                     <Trash2 size={14} />
                   </button>
@@ -114,7 +115,7 @@ export function CartPanel({ salesmen }: CartPanelProps) {
                 </div>
 
                 <div className="mt-2 flex items-center gap-2">
-                  <span className="text-xs text-gray-400">Discount (Rs.)</span>
+                  <span className="text-xs text-gray-400">{t("Discount (Rs.)")}</span>
                   <input
                     type="number"
                     min={0}
@@ -136,26 +137,25 @@ export function CartPanel({ salesmen }: CartPanelProps) {
 
       <div className="space-y-1.5 border-t border-gray-200 p-4 text-sm">
         <div className="flex justify-between text-gray-500">
-          <span>Items</span>
+          <span>{t("Items")}</span>
           <span>{itemCount}</span>
         </div>
         <div className="flex justify-between text-gray-500">
-          <span>Subtotal</span>
+          <span>{t("Subtotal")}</span>
           <span>{formatCurrency(subTotal)}</span>
         </div>
         <div className="flex justify-between text-gray-500">
-          <span>Discount</span>
+          <span>{t("Discount")}</span>
           <span>−{formatCurrency(discountTotal)}</span>
         </div>
         <div className="flex justify-between border-t border-gray-100 pt-1.5 text-base font-semibold text-gray-900">
-          <span>Total</span>
+          <span>{t("Total")}</span>
           <span>{formatCurrency(netTotal)}</span>
         </div>
 
         <Button className="mt-3 w-full" disabled={items.length === 0} onClick={() => setIsPaymentOpen(true)}>
-          Proceed to payment
+          {t("Proceed to payment")}
         </Button>
-        <p className="text-center text-[11px] text-gray-400">Invoice printing is added in the next step.</p>
       </div>
 
       {isPaymentOpen && <PaymentModal onClose={() => setIsPaymentOpen(false)} />}

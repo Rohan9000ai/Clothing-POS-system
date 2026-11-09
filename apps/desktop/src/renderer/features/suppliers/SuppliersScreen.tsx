@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Eye, PackagePlus, Pencil, Plus, Search, Trash2 } from "lucide-react";
-import { Badge, Button, Card, Modal, Table, ToggleSwitch, toneForStatus, type TableColumn } from "@muzammil-pos/ui";
+import { Badge, Button, Card, Table, ToggleSwitch, toneForStatus, type TableColumn } from "@muzammil-pos/ui";
+import { requestDelete } from "../../store/confirmDeleteStore";
 import type { Supplier } from "@muzammil-pos/types";
 import { formatCurrency } from "@muzammil-pos/utils";
 import { suppliersApi, type SupplierWithBalance } from "../../services/suppliers";
@@ -21,8 +22,6 @@ export function SuppliersScreen() {
   const [formModal, setFormModal] = useState<{ supplier?: Supplier } | null>(null);
   const [detailSupplier, setDetailSupplier] = useState<Supplier | null>(null);
   const [purchaseSupplier, setPurchaseSupplier] = useState<Supplier | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Supplier | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const loadSuppliers = useCallback(async () => {
@@ -90,21 +89,16 @@ export function SuppliersScreen() {
     }
   }
 
-  async function handleConfirmDelete() {
-    if (!deleteTarget) return;
-    setIsDeleting(true);
-    try {
-      await suppliersApi.remove(deleteTarget.id);
-      setSuppliers((prev) => prev.filter((s) => s.id !== deleteTarget.id));
-      push("success", `Supplier "${deleteTarget.name}" was deleted.`);
-      setDeleteTarget(null);
-    } catch (err) {
-      // e.g. supplier has bills or transaction history: the server message explains.
-      push("error", err instanceof Error ? err.message : "Could not delete supplier.");
-      setDeleteTarget(null);
-    } finally {
-      setIsDeleting(false);
-    }
+    function askDelete(supplier: Supplier) {
+    requestDelete({
+      itemName: supplier.name,
+      note: "A supplier with bills or payments cannot be deleted. Deactivate it instead.",
+      run: async (password) => {
+        await suppliersApi.remove(supplier.id, password);
+        setSuppliers((prev) => prev.filter((s) => s.id !== supplier.id));
+        push("success", `Supplier "${supplier.name}" was deleted.`);
+      },
+    });
   }
 
   const columns: TableColumn<SupplierWithBalance>[] = [
@@ -171,7 +165,7 @@ export function SuppliersScreen() {
           <IconButton label="Edit supplier" onClick={() => setFormModal({ supplier: s })}>
             <Pencil size={15} />
           </IconButton>
-          <IconButton label="Delete supplier" danger onClick={() => setDeleteTarget(s)}>
+          <IconButton label="Delete supplier" danger onClick={() => askDelete(s)}>
             <Trash2 size={15} />
           </IconButton>
         </div>
@@ -255,30 +249,6 @@ export function SuppliersScreen() {
           onSaved={handlePurchaseSaved}
         />
       )}
-
-      <Modal
-        isOpen={!!deleteTarget}
-        onClose={() => !isDeleting && setDeleteTarget(null)}
-        title="Delete supplier?"
-        size="sm"
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => setDeleteTarget(null)} disabled={isDeleting}>
-              Cancel
-            </Button>
-            <Button variant="danger" onClick={handleConfirmDelete} isLoading={isDeleting}>
-              Delete
-            </Button>
-          </>
-        }
-      >
-        <p className="text-sm text-gray-600">
-          Permanently delete <span className="font-semibold">{deleteTarget?.name}</span>? This cannot be undone.
-        </p>
-        <p className="mt-2 text-xs text-gray-400">
-          If this supplier has bills, payments or other history, deletion is blocked. Deactivate it instead.
-        </p>
-      </Modal>
     </div>
   );
 }

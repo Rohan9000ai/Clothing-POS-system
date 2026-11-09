@@ -1,0 +1,32 @@
+/* Urdu (right-to-left). Everything here applies only while <html dir="rtl">. */
+
+html[dir="rtl"] body {
+  /* Fonts already on Windows and Ubuntu, so it works offline. */
+  font-family: "Noto Naskh Arabic", "Noto Nastaliq Urdu", "Segoe UI", Tahoma, "DejaVu Sans", sans-serif;
+  line-height: 1.75;
+}
+html[dir="rtl"] input,
+html[dir="rtl"] textarea,
+html[dir="rtl"] select,
+html[dir="rtl"] button {
+  font-family: inherit;
+}
+/* Numbers stay left-to-right and line up at the end of the field. */
+html[dir="rtl"] input[type="number"],
+html[dir="rtl"] input[type="date"] {
+  direction: ltr;
+  text-align: end;
+}
+
+/* Mirrors the plain left/right classes used by the screens that are not converted yet. */
+html[dir="rtl"] .text-left { text-align: right; }
+html[dir="rtl"] .text-right { text-align: left; }
+html[dir="rtl"] .border-l { border-left-width: 0; border-right-width: 1px; }
+html[dir="rtl"] .border-r { border-right-width: 0; border-left-width: 1px; }
+html[dir="rtl"] .left-3 { left: auto; right: 0.75rem; }
+html[dir="rtl"] .pl-9 { padding-left: 0.75rem; padding-right: 2.25rem; }
+html[dir="rtl"] .pl-4 { padding-left: 0; padding-right: 1rem; }
+html[dir="rtl"] .ml-auto { margin-left: 0; margin-right: auto; }
+html[dir="rtl"] .mr-auto { margin-right: 0; margin-left: auto; }
+html[dir="rtl"] .ml-2 { margin-left: 0; margin-right: 0.5rem; }
+html[dir="rtl"] .mr-2 { margin-right: 0; margin-left: 0.5rem; }

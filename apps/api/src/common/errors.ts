@@ -317,4 +317,16 @@ export const Errors = {
       "errors.business.backupInProgress",
       "A backup is already running. Please wait for it to finish."
     ),
+  wrongPassword: () =>
+    new BusinessError(
+      "WRONG_PASSWORD",
+      "errors.business.wrongPassword",
+      "Wrong password. Nothing was deleted."
+    ),
+  tooManyPasswordAttempts: () =>
+    new BusinessError(
+      "TOO_MANY_PASSWORD_ATTEMPTS",
+      "errors.business.tooManyPasswordAttempts",
+      "Too many wrong passwords. Please wait 10 minutes and try again."
+    ),
 };

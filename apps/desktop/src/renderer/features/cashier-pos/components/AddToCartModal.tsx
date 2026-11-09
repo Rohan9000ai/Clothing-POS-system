@@ -4,6 +4,7 @@ import { Button, Modal } from "@muzammil-pos/ui";
 import { formatCurrency } from "@muzammil-pos/utils";
 import type { CashierProduct, CashierProductVariant } from "../../../services/cashier";
 import { useCartStore } from "../../../store/cartStore";
+import { useT } from "../../../i18n/store";
 
 interface AddToCartModalProps {
   product: CashierProduct;
@@ -13,6 +14,7 @@ interface AddToCartModalProps {
 export function AddToCartModal({ product, onClose }: AddToCartModalProps) {
   const addItem = useCartStore((s) => s.addItem);
   const cartItems = useCartStore((s) => s.items);
+  const t = useT();
 
   const [selectedVariant, setSelectedVariant] = useState<CashierProductVariant | null>(
     product.variants.length === 1 ? (product.variants[0] ?? null) : null
@@ -48,22 +50,17 @@ export function AddToCartModal({ product, onClose }: AddToCartModalProps) {
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
-            Cancel
+            {t("Cancel")}
           </Button>
-          <Button
-            onClick={handleAdd}
-            disabled={!selectedVariant || quantity < 1 || quantity > remainingStock}
-          >
-            Add to cart
+          <Button onClick={handleAdd} disabled={!selectedVariant || quantity < 1 || quantity > remainingStock}>
+            {t("Add to cart")}
           </Button>
         </>
       }
     >
       <div className="space-y-4">
         <div>
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
-            Select size / color
-          </p>
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">{t("Select size / color")}</p>
           <div className="flex flex-wrap gap-2">
             {product.variants.map((v) => {
               const inCart = cartItems.find((i) => i.variantId === v.id)?.quantity ?? 0;
@@ -79,7 +76,7 @@ export function AddToCartModal({ product, onClose }: AddToCartModalProps) {
                     setQuantity(1);
                   }}
                   className={clsx(
-                    "rounded-control border px-3 py-2 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+                    "rounded-control border px-3 py-2 text-start text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40",
                     isSelected
                       ? "border-brand bg-brand-light text-brand"
                       : "border-gray-300 text-gray-700 hover:border-brand"
@@ -88,8 +85,8 @@ export function AddToCartModal({ product, onClose }: AddToCartModalProps) {
                   <span className="font-medium">
                     {v.size} / {v.color}
                   </span>
-                  <span className="ml-2 text-xs text-gray-400">
-                    {isOut ? "Out of stock" : `${available} in stock`}
+                  <span className="ms-2 text-xs text-gray-400">
+                    {isOut ? t("Out of stock") : t("{n} in stock", { n: available })}
                   </span>
                 </button>
               );
@@ -100,14 +97,14 @@ export function AddToCartModal({ product, onClose }: AddToCartModalProps) {
         {selectedVariant && (
           <>
             <div className="flex items-center justify-between rounded-control bg-gray-50 px-3 py-2 text-sm">
-              <span className="text-gray-500">Price</span>
+              <span className="text-gray-500">{t("Price")}</span>
               <span className="font-medium text-gray-900">
                 {formatCurrency(selectedVariant.priceOverride ?? product.basePrice)}
               </span>
             </div>
 
             <div>
-              <p className="mb-1.5 text-xs font-medium text-gray-700">Quantity</p>
+              <p className="mb-1.5 text-xs font-medium text-gray-700">{t("Quantity")}</p>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
@@ -130,10 +127,10 @@ export function AddToCartModal({ product, onClose }: AddToCartModalProps) {
                 >
                   +
                 </button>
-                <span className="text-xs text-gray-400">{remainingStock} available</span>
+                <span className="text-xs text-gray-400">{t("{n} available", { n: remainingStock })}</span>
               </div>
               {quantity > remainingStock && (
-                <p className="mt-1 text-xs text-danger">Only {remainingStock} in stock.</p>
+                <p className="mt-1 text-xs text-danger">{t("Only {n} in stock.", { n: remainingStock })}</p>
               )}
             </div>
           </>

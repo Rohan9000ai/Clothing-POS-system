@@ -47,7 +47,7 @@ export const suppliersApi = {
     });
     return res.supplier;
   },
-  async remove(id: string): Promise<void> {
-    await apiRequest(`/suppliers/${id}`, { method: "DELETE" });
+    async remove(id: string, password: string): Promise<void> {
+    await apiRequest(`/suppliers/${id}`, { method: "DELETE", body: { password } });
   },
 };

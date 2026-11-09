@@ -4,6 +4,7 @@ import { formatCurrency } from "@muzammil-pos/utils";
 import type { CashierProduct } from "../../../services/cashier";
 import { API_ORIGIN } from "../../../services/http";
 import { useShopSettings } from "../../../store/settingsStore";
+import { useT } from "../../../i18n/store";
 
 interface ProductGridProps {
   products: CashierProduct[];
@@ -17,15 +18,17 @@ function totalStock(product: CashierProduct): number {
 
 export function ProductGrid({ products, isLoading, onSelectProduct }: ProductGridProps) {
   const { lowStockThreshold } = useShopSettings();
+  const t = useT();
+
   if (isLoading) {
-    return <div className="flex h-40 items-center justify-center text-sm text-gray-400">Loading products…</div>;
+    return <div className="flex h-40 items-center justify-center text-sm text-gray-400">{t("Loading products…")}</div>;
   }
 
   if (products.length === 0) {
     return (
       <div className="flex h-40 flex-col items-center justify-center gap-1 text-center text-sm text-gray-400">
-        <p>No products found.</p>
-        <p className="text-xs">Try a different search term.</p>
+        <p>{t("No products found.")}</p>
+        <p className="text-xs">{t("Try a different search term.")}</p>
       </div>
     );
   }
@@ -55,7 +58,9 @@ export function ProductGrid({ products, isLoading, onSelectProduct }: ProductGri
             <p className="text-xs text-gray-400">{product.category?.name ?? "—"}</p>
             <div className="mt-2 flex items-center justify-between">
               <span className="text-sm font-semibold text-brand">{formatCurrency(product.basePrice)}</span>
-              <Badge tone={stock === 0 ? "danger" : stock < lowStockThreshold ? "warning" : "neutral"}>{stock} in stock</Badge>
+              <Badge tone={stock === 0 ? "danger" : stock < lowStockThreshold ? "warning" : "neutral"}>
+                {stock === 0 ? t("Out of stock") : t("{n} in stock", { n: stock })}
+              </Badge>
             </div>
           </Card>
         );

@@ -8,6 +8,7 @@ import { toPaisa, fromPaisa } from "@muzammil-pos/utils";
 import { productsApi, variantsApi, productImagesApi } from "../../services/inventory";
 import { API_ORIGIN } from "../../services/http";
 import { getFieldErrors, zodFieldErrors } from "../../utils/formErrors";
+import { requestDelete } from "../../store/confirmDeleteStore";
 
 type Step = 1 | 2 | 3;
 
@@ -189,18 +190,18 @@ export function ProductWizardModal({ product, categories, onClose, onSaved }: Pr
     }
   }
 
-  async function handleDeleteVariant(variant: ProductVariant) {
+    function handleDeleteVariant(variant: ProductVariant) {
     if (!workingProduct) return;
-    setBusyVariantId(variant.id);
-    try {
-      await variantsApi.remove(workingProduct.id, variant.id);
-      setVariants((prev) => prev.filter((v) => v.id !== variant.id));
-    } catch (err) {
-      // e.g. variant already has sale history — server message explains.
-      setVariantError(err instanceof Error ? err.message : "Could not delete variant.");
-    } finally {
-      setBusyVariantId(null);
-    }
+    const productId = workingProduct.id;
+    requestDelete({
+      itemName: `${variant.size} / ${variant.color}`,
+      note: "Stock left in this size is removed too. Old bills and reports keep their records.",
+      run: async (password) => {
+        const remaining = await variantsApi.remove(productId, variant.id, password);
+        setVariants(remaining);
+        setVariantError(null);
+      },
+    });
   }
 
   async function handleUploadImages(fileList: FileList | null) {

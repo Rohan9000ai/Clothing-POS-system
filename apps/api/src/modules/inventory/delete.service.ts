@@ -77,4 +77,5 @@ export async function deleteVariantForever(productId: string, variantId: string,
     },
     { timeout: 30000 }
   );
+  return prisma.productVariant.findMany({ where: { productId } });
 }

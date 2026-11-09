@@ -5,6 +5,8 @@ import clsx from "clsx";
 import { Button } from "@muzammil-pos/ui";
 import { useAuthStore } from "../../store/authStore";
 import { useApiHealth, type ConnectionState } from "../../hooks/useApiHealth";
+import { LanguageSwitch } from "../../components/LanguageSwitch";
+import { useLangStore, useT } from "../../i18n/store";
 import { findNavItem } from "./navConfig";
 
 const STATUS_PILL: Record<ConnectionState, { label: string; pill: string; dot: string }> = {
@@ -17,6 +19,8 @@ const STATUS_PILL: Record<ConnectionState, { label: string; pill: string; dot: s
 export function Topbar() {
   const [now, setNow] = useState(new Date());
   const user = useAuthStore((s) => s.user);
+  const lang = useLangStore((s) => s.lang);
+  const t = useT();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { state, health, errorMessage } = useApiHealth();
@@ -38,13 +42,14 @@ export function Topbar() {
           ? (errorMessage ?? "Could not reach the API")
           : "Checking connection…";
 
-  const formattedDate = now.toLocaleDateString(undefined, {
+  const locale = lang === "ur" ? "ur-PK" : undefined;
+  const formattedDate = now.toLocaleDateString(locale, {
     weekday: "short",
     year: "numeric",
     month: "short",
     day: "numeric",
   });
-  const formattedTime = now.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  const formattedTime = now.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
 
   const initials = user?.fullName
     ?.split(" ")
@@ -57,19 +62,16 @@ export function Topbar() {
     <header className="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-6">
       <div>
         <p className="text-[11px] font-medium text-gray-400">مزمل اسٹور — Muzammil Store</p>
-        <h1 className="text-base font-semibold leading-tight text-gray-900">{page?.label ?? "Admin"}</h1>
+        <h1 className="text-base font-semibold leading-tight text-gray-900">{t(page?.label ?? "Admin")}</h1>
       </div>
 
       <div className="flex items-center gap-4">
         <span
           title={statusTooltip}
-          className={clsx(
-            "inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium",
-            status.pill
-          )}
+          className={clsx("inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium", status.pill)}
         >
           <span className={clsx("h-2 w-2 rounded-full", status.dot)} />
-          {status.label}
+          {t(status.label)}
         </span>
 
         <span className="flex items-center gap-1.5 text-xs text-gray-500">
@@ -77,21 +79,20 @@ export function Topbar() {
           {formattedDate} · {formattedTime}
         </span>
 
-        {/* Quick action */}
+        <LanguageSwitch />
+
         <Button size="sm" onClick={() => navigate("/pos")}>
           <ShoppingCart size={15} />
-          New sale
+          {t("New sale")}
         </Button>
 
-        <div className="flex items-center gap-2 border-l border-gray-200 pl-4">
+        <div className="flex items-center gap-2 border-s border-gray-200 ps-4">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-light text-xs font-semibold text-brand">
             {initials ?? "A"}
           </div>
           <div className="leading-tight">
-            <p className="text-sm font-medium text-gray-800">{user?.fullName ?? "Admin"}</p>
-            <p className="text-[11px] text-gray-400">
-              {user?.role === "ADMIN" ? "Administrator" : "Cashier"}
-            </p>
+            <p className="text-sm font-medium text-gray-800">{user?.fullName ?? t("Admin")}</p>
+            <p className="text-[11px] text-gray-400">{user?.role === "ADMIN" ? t("Administrator") : t("Cashier")}</p>
           </div>
         </div>
       </div>

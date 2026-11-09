@@ -2,19 +2,21 @@ import { NavLink } from "react-router-dom";
 import { LogOut } from "lucide-react";
 import { NAV_GROUPS } from "./navConfig";
 import { useAuthStore } from "../../store/authStore";
+import { useT } from "../../i18n/store";
 
 export function Sidebar() {
   const logout = useAuthStore((s) => s.logout);
+  const t = useT();
 
   return (
-    <aside className="flex w-60 shrink-0 flex-col border-r border-gray-200 bg-white">
+    <aside className="flex w-60 shrink-0 flex-col border-e border-gray-200 bg-white">
       <div className="flex items-center gap-3 px-5 py-5">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-base font-bold text-white">
           M
         </div>
         <div>
           <p className="text-sm font-semibold leading-tight text-gray-900">مزمل اسٹور</p>
-          <p className="text-xs leading-tight text-gray-400">Muzammil Store · Admin</p>
+          <p className="text-xs leading-tight text-gray-400">{t("Muzammil Store · Admin")}</p>
         </div>
       </div>
 
@@ -23,7 +25,7 @@ export function Sidebar() {
           <div key={group.title ?? index}>
             {group.title && (
               <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-                {group.title}
+                {t(group.title)}
               </p>
             )}
             <div className="space-y-1">
@@ -41,7 +43,7 @@ export function Sidebar() {
                   }
                 >
                   <Icon size={18} strokeWidth={2} />
-                  {label}
+                  {t(label)}
                 </NavLink>
               ))}
             </div>
@@ -55,7 +57,7 @@ export function Sidebar() {
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-danger-light hover:text-danger"
         >
           <LogOut size={18} strokeWidth={2} />
-          Log out
+          {t("Log out")}
         </button>
       </div>
     </aside>

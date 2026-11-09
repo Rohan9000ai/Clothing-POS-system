@@ -69,8 +69,8 @@ export const productsApi = {
     });
     return res.product;
   },
-  async remove(id: string): Promise<void> {
-    await apiRequest(`/inventory/products/${id}`, { method: "DELETE" });
+  async remove(id: string, password: string): Promise<void> {
+  await apiRequest(`/inventory/products/${id}`, { method: "DELETE", body: { password } });
   },
 };
 
@@ -110,8 +110,12 @@ export const variantsApi = {
     );
     return res.variant;
   },
-  async remove(productId: string, variantId: string): Promise<void> {
-    await apiRequest(`/inventory/products/${productId}/variants/${variantId}`, { method: "DELETE" });
+    async remove(productId: string, variantId: string, password: string): Promise<ProductVariant[]> {
+    const res = await apiRequest<{ variants: ProductVariant[] }>(
+      `/inventory/products/${productId}/variants/${variantId}`,
+      { method: "DELETE", body: { password } }
+    );
+    return res.variants;
   },
 };
 

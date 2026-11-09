@@ -2,6 +2,7 @@ import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { BackupWarning } from "../../features/settings/BackupWarning";
+import { ConfirmDeleteHost } from "../../components/ConfirmDeleteHost";
 
 export function AppLayout() {
   return (
@@ -14,6 +15,7 @@ export function AppLayout() {
           <Outlet />
         </main>
       </div>
+      <ConfirmDeleteHost />
     </div>
   );
 }
