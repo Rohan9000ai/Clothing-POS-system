@@ -16,6 +16,7 @@ import { RequireAuth } from "./RequireAuth";
 import { RoleRedirect } from "./RoleRedirect";
 import { useAuthStore } from "../../store/authStore";
 import { InvoiceScreen } from "../../features/invoice/InvoiceScreen";
+import { CategoriesScreen } from "../../features/categories/CategoriesScreen";
 
 export function AppRouter() {
   const restoreSession = useAuthStore((s) => s.restoreSession);
@@ -60,6 +61,7 @@ export function AppRouter() {
         >
           <Route path="/" element={<AdminDashboardScreen />} />
           <Route path="/inventory" element={<InventoryScreen />} />
+          <Route path="/categories" element={<CategoriesScreen />} />
           <Route path="/sales" element={<SalesScreen />} />
           <Route path="/suppliers" element={<SuppliersScreen />} />
           <Route path="/salesmen" element={<SalesmenScreen />} />

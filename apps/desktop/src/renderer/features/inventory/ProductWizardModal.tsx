@@ -241,7 +241,16 @@ export function ProductWizardModal({ product, categories, onClose, onSaved }: Pr
     }
   }
 
-  const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }));
+  // Only active categories can be picked (the product's current one stays visible even if it was deactivated).
+  const categoryOptions = [
+    {
+      value: "",
+      label: categories.length === 0 ? "No categories yet — add one in Categories first" : "Select a category",
+    },
+    ...categories
+      .filter((c) => c.status === "ACTIVE" || c.id === categoryId)
+      .map((c) => ({ value: c.id, label: c.name })),
+  ];
 
   return (
     <Modal isOpen onClose={onClose} title={isEdit ? "Edit product" : "Add product"} size="lg" footer={

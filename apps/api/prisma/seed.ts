@@ -19,14 +19,6 @@ const prisma = new PrismaClient();
 const DEFAULT_ADMIN_USERNAME = "admin";
 const DEFAULT_ADMIN_PASSWORD = "Muzammil@123"; // change after first login
 
-const STARTER_CATEGORIES = [
-  "Shalwar Kameez",
-  "Shirts",
-  "Trousers",
-  "Kids Wear",
-  "Winter Wear",
-  "Accessories",
-];
 
 async function main() {
   console.log("Seeding Muzammil Store POS database...");
@@ -71,16 +63,6 @@ async function main() {
   } else {
     console.log("Settings row already exists, skipping.");
   }
-
-  // ---- Starter categories ----
-  for (const name of STARTER_CATEGORIES) {
-    await prisma.category.upsert({
-      where: { name },
-      update: {},
-      create: { name, status: "ACTIVE" },
-    });
-  }
-  console.log(`Ensured ${STARTER_CATEGORIES.length} starter categories exist.`);
 
   console.log("Seeding complete.");
 }

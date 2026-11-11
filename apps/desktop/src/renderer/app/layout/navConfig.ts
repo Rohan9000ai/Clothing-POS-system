@@ -1,6 +1,7 @@
 import {
   LayoutDashboard,
   Boxes,
+  Tags,
   Receipt,
   Truck,
   UserRound,
@@ -41,6 +42,7 @@ export const NAV_GROUPS: NavGroup[] = [
     title: "Operations",
     items: [
       { to: "/inventory", label: "Inventory", subtitle: "Products, sizes, colors and stock levels", icon: Boxes },
+      { to: "/categories", label: "Categories", subtitle: "Your product categories", icon: Tags },
       { to: "/sales", label: "Sales", subtitle: "Invoices, payments and sales history", icon: Receipt },
       { to: "/suppliers", label: "Suppliers", subtitle: "Supplier accounts and balances", icon: Truck },
       { to: "/salesmen", label: "Salesmen", subtitle: "Sales staff and performance", icon: UserRound },

@@ -7,7 +7,12 @@ import type {
 } from "@muzammil-pos/validation";
 
 export async function listCategories() {
-  return prisma.category.findMany({ orderBy: { name: "asc" } });
+  const [categories, counts] = await Promise.all([
+    prisma.category.findMany({ orderBy: { name: "asc" } }),
+    prisma.product.groupBy({ by: ["categoryId"], _count: { _all: true } }),
+  ]);
+  const countById = new Map(counts.map((row) => [row.categoryId, row._count._all]));
+  return categories.map((category) => ({ ...category, productCount: countById.get(category.id) ?? 0 }));
 }
 
 export async function createCategory(input: CreateCategoryInput) {

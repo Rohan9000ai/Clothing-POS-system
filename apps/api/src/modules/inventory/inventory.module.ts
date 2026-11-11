@@ -2,6 +2,7 @@ import { Router } from "express";
 import { asyncHandler } from "../../common/error-handler.middleware";
 import { validate } from "../../common/validate.middleware";
 import { requireAuth, requireRole } from "../../common/auth-guard.middleware";
+import { confirmAdminPassword } from "../../common/confirm-password";
 import { uploadProductImages } from "../../common/upload";
 import {
   createCategorySchema,
@@ -72,7 +73,7 @@ inventoryRouter.patch(
   validate(toggleCategoryStatusSchema),
   asyncHandler(patchCategoryStatus)
 );
-inventoryRouter.delete("/categories/:id", requireRole("ADMIN"), asyncHandler(deleteCategoryHandler));
+inventoryRouter.delete("/categories/:id", requireRole("ADMIN"), confirmAdminPassword, asyncHandler(deleteCategoryHandler));
 
 // Cashier-facing + low-stock queries — placed before the generic /products/:id
 // routes purely for readability; Express matches these literal paths fine

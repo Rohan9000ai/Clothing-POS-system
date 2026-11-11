@@ -3,6 +3,7 @@ export const UR: Record<string, string> = {
   // Navigation
   Dashboard: "ڈیش بورڈ",
   Inventory: "انوینٹری",
+  Categories: "کیٹیگریز",
   Sales: "فروخت",
   Suppliers: "سپلائرز",
   Salesmen: "سیلز مین",
