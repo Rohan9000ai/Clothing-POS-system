@@ -82,4 +82,6 @@ export const UR: Record<string, string> = {
   "Wrong password. Nothing was deleted.": "پاس ورڈ غلط ہے۔ کچھ بھی حذف نہیں ہوا۔",
   "Too many wrong passwords. Please wait 10 minutes and try again.": "بہت زیادہ غلط پاس ورڈ۔ براہِ کرم 10 منٹ بعد کوشش کریں۔",
   "Could not delete. Please try again.": "حذف نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
+
+  All: "تمام",
 };
