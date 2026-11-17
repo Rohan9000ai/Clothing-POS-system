@@ -1,14 +1,22 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2, Plus, Trash2, UploadCloud } from "lucide-react";
 import clsx from "clsx";
 import { Badge, Button, Input, Modal, Select, ToggleSwitch } from "@muzammil-pos/ui";
 import type { Product, ProductVariant, ProductImage, Category } from "@muzammil-pos/types";
-import { createProductSchema, updateProductSchema, createProductVariantSchema } from "@muzammil-pos/validation";
+
+import { createProductSchema, updateProductSchema, createProductVariantSchema ,createSupplierPurchaseSchema} from "@muzammil-pos/validation";
 import { toPaisa, fromPaisa } from "@muzammil-pos/utils";
 import { productsApi, variantsApi, productImagesApi } from "../../services/inventory";
 import { API_ORIGIN } from "../../services/http";
 import { getFieldErrors, zodFieldErrors } from "../../utils/formErrors";
 import { requestDelete } from "../../store/confirmDeleteStore";
+import { suppliersApi, type SupplierWithBalance } from "../../services/suppliers";
+import { supplierPurchasesApi } from "../../services/supplierPurchases";
+import { listProductVariants } from "../../services/variantList";
+import { toLocalYmd } from "../expenses/expenseRange";
+import { requestStockAdjust } from "../../store/stockAdjustStore";
+import { adjustVariantStock } from "../../services/stockAdjust";
+
 
 type Step = 1 | 2 | 3;
 
@@ -47,6 +55,18 @@ export function ProductWizardModal({ product, categories, onClose, onSaved }: Pr
   const [variantError, setVariantError] = useState<string | null>(null);
   const [isAddingVariant, setIsAddingVariant] = useState(false);
   const [busyVariantId, setBusyVariantId] = useState<string | null>(null);
+  const [suppliers, setSuppliers] = useState<SupplierWithBalance[]>([]);
+  const [newSupplierId, setNewSupplierId] = useState("");
+  const [newCost, setNewCost] = useState("");
+
+  useEffect(() => {
+    suppliersApi
+      .list()
+      .then((list) => setSuppliers(list.filter((s) => s.status === "ACTIVE")))
+      .catch(() => {
+        // The supplier list just stays empty; adding stock then explains what is missing.
+      });
+  }, []);
 
   // Step 3: Images
   const [images, setImages] = useState<ProductImage[]>(product?.images ?? []);
@@ -108,14 +128,15 @@ export function ProductWizardModal({ product, categories, onClose, onSaved }: Pr
     return variants.some((v) => v.size.trim().toLowerCase() === s && v.color.trim().toLowerCase() === c);
   }
 
-  async function handleAddVariant() {
+    async function handleAddVariant() {
     if (!workingProduct) return;
     setVariantError(null);
 
+    const quantity = newQuantity === "" ? NaN : Number(newQuantity);
     const rawInput = {
       size: newSize.trim(),
       color: newColor.trim(),
-      quantity: newQuantity === "" ? NaN : Number(newQuantity),
+      quantity,
       priceOverride: newPriceOverride === "" ? null : toPaisa(Number(newPriceOverride)),
     };
 
@@ -129,35 +150,71 @@ export function ProductWizardModal({ product, categories, onClose, onSaved }: Pr
       return;
     }
 
+    const withStock = quantity > 0;
+    const costRupees = newCost === "" ? NaN : Number(newCost);
+    if (withStock) {
+      if (!newSupplierId) {
+        setVariantError("Choose the supplier these pieces came from.");
+        return;
+      }
+      if (!(costRupees > 0)) {
+        setVariantError("Enter the price per piece you paid. It must be more than 0.");
+        return;
+      }
+    }
+
     setIsAddingVariant(true);
     try {
-      const created = await variantsApi.create(workingProduct.id, rawInput);
-      setVariants((prev) => [...prev, created]);
+      if (!withStock) {
+        const created = await variantsApi.create(workingProduct.id, rawInput);
+        setVariants((prev) => [...prev, created]);
+      } else {
+        // Saved as a real supplier bill: stock goes up and the supplier's balance goes up together.
+          const billInput = createSupplierPurchaseSchema.safeParse({
+          purchaseDate: toLocalYmd(new Date()),
+          notes: "Added from Inventory",
+          items: [
+            {
+              productId: workingProduct.id,
+              size: rawInput.size,
+              color: rawInput.color,
+              quantity,
+              unitCost: toPaisa(costRupees),
+            },
+          ],
+        });
+        if (!billInput.success) {
+          setVariantError(billInput.error.issues[0]?.message ?? "Please check the quantity and the price.");
+          return;
+        }
+        const bill = await supplierPurchasesApi.create(newSupplierId, billInput.data);
+
+        let overrideProblem: string | null = null;
+        const variantId = bill.items[0]?.variantId;
+        if (variantId && rawInput.priceOverride !== null) {
+          try {
+            await variantsApi.update(workingProduct.id, variantId, { priceOverride: rawInput.priceOverride });
+          } catch (err) {
+            overrideProblem = err instanceof Error ? err.message : "unknown error";
+          }
+        }
+        setVariants(await listProductVariants(workingProduct.id));
+        if (overrideProblem) {
+          setVariantError(`The stock was added, but the price override could not be saved: ${overrideProblem}`);
+        }
+      }
       setNewSize("");
       setNewColor("");
       setNewQuantity("0");
       setNewPriceOverride("");
+      setNewCost("");
     } catch (err) {
-      // Server-side duplicate check is the final backstop even though we
-      // already checked client-side above.
       setVariantError(err instanceof Error ? err.message : "Could not add variant.");
     } finally {
       setIsAddingVariant(false);
     }
   }
 
-  async function handleVariantQuantityChange(variant: ProductVariant, nextQuantity: number) {
-    if (!workingProduct || Number.isNaN(nextQuantity) || nextQuantity < 0 || nextQuantity === variant.quantity) return;
-    setBusyVariantId(variant.id);
-    try {
-      const updated = await variantsApi.update(workingProduct.id, variant.id, { quantity: nextQuantity });
-      setVariants((prev) => prev.map((v) => (v.id === variant.id ? updated : v)));
-    } catch (err) {
-      setVariantError(err instanceof Error ? err.message : "Could not update quantity.");
-    } finally {
-      setBusyVariantId(null);
-    }
-  }
 
   async function handleVariantPriceChange(variant: ProductVariant, nextValue: string) {
     if (!workingProduct) return;
@@ -190,7 +247,21 @@ export function ProductWizardModal({ product, categories, onClose, onSaved }: Pr
     }
   }
 
-    function handleDeleteVariant(variant: ProductVariant) {
+  function handleAdjustStock(variant: ProductVariant) {
+    if (!workingProduct) return;
+    const productId = workingProduct.id;
+    requestStockAdjust({
+      label: `${workingProduct.name} — ${variant.size} / ${variant.color}`,
+      currentQuantity: variant.quantity,
+      run: async (quantityChange, reason) => {
+        await adjustVariantStock(productId, variant.id, quantityChange, reason);
+        setVariants(await listProductVariants(productId));
+        setVariantError(null);
+      },
+    });
+  }
+    
+ function handleDeleteVariant(variant: ProductVariant) {
     if (!workingProduct) return;
     const productId = workingProduct.id;
     requestDelete({
@@ -385,14 +456,17 @@ export function ProductWizardModal({ product, categories, onClose, onSaved }: Pr
                       <td className="px-3 py-2">{v.color}</td>
                       <td className="px-3 py-2 text-xs text-gray-400">{v.variantSku}</td>
                       <td className="px-3 py-2">
-                        <input
-                          type="number"
-                          min="0"
-                          defaultValue={v.quantity}
-                          disabled={busyVariantId === v.id}
-                          onBlur={(e) => handleVariantQuantityChange(v, Number(e.target.value))}
-                          className="w-16 rounded-control border border-gray-300 px-2 py-1 text-sm"
-                        />
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-gray-900">{v.quantity}</span>
+                          <button
+                            type="button"
+                            title="Remove damaged stock or add returned stock"
+                            onClick={() => handleAdjustStock(v)}
+                            className="rounded-control border border-gray-300 px-2 py-0.5 text-xs text-gray-600 hover:border-brand hover:text-brand"
+                          >
+                            Adjust
+                          </button>
+                        </div>
                       </td>
                       <td className="px-3 py-2">
                         <input
@@ -462,6 +536,39 @@ export function ProductWizardModal({ product, categories, onClose, onSaved }: Pr
                 className="rounded-control border border-gray-300 px-2 py-1.5 text-sm"
               />
             </div>
+                {Number(newQuantity) > 0 && (
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <select
+                  value={newSupplierId}
+                  onChange={(e) => setNewSupplierId(e.target.value)}
+                  className="rounded-control border border-gray-300 px-2 py-1.5 text-sm"
+                >
+                  <option value="">Supplier these pieces came from…</option>
+                  {suppliers.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Price per piece you paid (Rs.)"
+                  value={newCost}
+                  onChange={(e) => setNewCost(e.target.value)}
+                  className="rounded-control border border-gray-300 px-2 py-1.5 text-sm"
+                />
+                <p className="col-span-2 text-xs text-gray-500">
+                  These pieces are saved as a supplier bill: the stock goes up and the amount is added to what you owe
+                  this supplier.
+                </p>
+              </div>
+            )}
+            <p className="mt-2 text-xs text-gray-400">
+              Quantity in the table can't be edited. Add stock here with a supplier, or record a stock bill in
+              Suppliers. Stock goes down when you sell it.
+            </p>
             <div className="mt-2 flex items-center justify-between">
               {variantError && <p className="text-xs text-danger">{variantError}</p>}
               <Button size="sm" className="ml-auto" onClick={handleAddVariant} isLoading={isAddingVariant}>

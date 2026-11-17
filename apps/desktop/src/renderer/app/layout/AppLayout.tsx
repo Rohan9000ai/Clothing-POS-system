@@ -3,6 +3,7 @@ import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { BackupWarning } from "../../features/settings/BackupWarning";
 import { ConfirmDeleteHost } from "../../components/ConfirmDeleteHost";
+import { StockAdjustHost } from "../../components/StockAdjustHost";
 
 export function AppLayout() {
   return (
@@ -16,6 +17,7 @@ export function AppLayout() {
         </main>
       </div>
       <ConfirmDeleteHost />
+      <StockAdjustHost />
     </div>
   );
 }
